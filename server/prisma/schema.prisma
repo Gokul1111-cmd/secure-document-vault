@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String   @id @default(uuid())
+  name            String
+  email           String   @unique
+  passwordHash    String   @map("password_hash")
+  viewPinHash     String?  @map("view_pin_hash")
+  role            Role     @default(USER)
+  status          UserStatus @default(ACTIVE)
+  failedAttempts  Int      @default(0) @map("failed_attempts")
+  lastLogin       DateTime? @map("last_login")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  documents       Document[]
+  logs            AuditLog[]
+  passwordResets  PasswordReset[]
+
+  @@map("users")
+}
+
+model Document {
+  id                String   @id @default(uuid())
+  ownerUserId       String   @map("owner_user_id")
+  fileName          String   @map("file_name")
+  fileSize          Int      @map("file_size")
+  mimeType          String   @map("mime_type")
+  storagePath       String   @map("storage_path")
+  encryptedAesKey   String   @map("encrypted_aes_key") @db.Text
+  downloadCount     Int      @default(0) @map("download_count")
+  lastEditedAt      DateTime @default(now()) @map("last_edited_at")
+  lastDownloadAt    DateTime? @map("last_download_at")
+  sharedStatus      Boolean  @default(false) @map("shared_status")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  owner             User     @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  logs              AuditLog[]
+
+  @@index([ownerUserId])
+  @@map("documents")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?  @map("user_id")
+  action      String
+  docId       String?  @map("doc_id")
+  ipAddr      String?  @map("ip_addr")
+  userAgent   String?  @map("user_agent") @db.Text
+  status      LogStatus @default(SUCCESS)
+  message     String?  @db.Text
+  timestamp   DateTime @default(now())
+
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  document    Document? @relation(fields: [docId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([docId])
+  @@index([timestamp])
+  @@map("audit_logs")
+}
+
+model PasswordReset {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  tokenHash   String   @unique @map("token_hash")
+  expiresAt   DateTime @map("expires_at")
+  used        Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_resets")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  LOCKED
+  INACTIVE
+}
+
+enum LogStatus {
+  SUCCESS
+  FAILURE
+  WARNING
+}
