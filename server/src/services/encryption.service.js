@@ -5,7 +5,26 @@ const path = require('path');
 let privateKey = null;
 let publicKey = null;
 
+const getInlineKey = (envValue) => {
+  if (!envValue || !envValue.length) return null;
+  // Support both raw multiline keys and escaped newlines from env storage
+  return envValue.replace(/\\n/g, '\n').replace(/\r?\n/g, '\n');
+};
+
 const loadKeys = () => {
+  if (privateKey && publicKey) {
+    return;
+  }
+
+  const inlinePrivate = getInlineKey(process.env.RSA_PRIVATE_KEY);
+  const inlinePublic = getInlineKey(process.env.RSA_PUBLIC_KEY);
+
+  if (inlinePrivate && inlinePublic) {
+    privateKey = inlinePrivate;
+    publicKey = inlinePublic;
+    return;
+  }
+
   const privateKeyPath = path.resolve(process.cwd(), process.env.RSA_PRIVATE_KEY_PATH || 'keys/private.pem');
   const publicKeyPath = path.resolve(process.cwd(), process.env.RSA_PUBLIC_KEY_PATH || 'keys/public.pem');
 

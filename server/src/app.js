@@ -14,12 +14,24 @@ const app = express();
 
 app.set('trust proxy', 1);
 app.use(helmet());
-// Allow multiple dev origins (Vite may shift ports if 5173 busy)
-const allowedOrigins = [env.clientOrigin, 'http://localhost:5174'];
+// Allow multiple dev origins (Vite may shift ports if 5173 busy) and production domains
+const allowedOrigins = new Set([
+  ...env.clientOrigins,
+  'http://localhost:5174',
+]);
+
+if (process.env.VERCEL_URL) {
+  allowedOrigins.add(`https://${process.env.VERCEL_URL}`);
+}
+
+if (process.env.RENDER_EXTERNAL_URL) {
+  allowedOrigins.add(process.env.RENDER_EXTERNAL_URL);
+}
+
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true); // non-browser or same-origin
-    if (allowedOrigins.includes(origin)) return callback(null, true);
+    if (allowedOrigins.has(origin)) return callback(null, true);
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,

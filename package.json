@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate:prisma": "npm run --prefix server prisma:generate",
+    "vercel-build": "npm run generate:prisma && npm run build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
