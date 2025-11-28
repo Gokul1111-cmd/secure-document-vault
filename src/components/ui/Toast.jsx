@@ -17,19 +17,19 @@ function Toast({ message, type = 'success', onClose, duration = 4000 }) {
   };
 
   const backgrounds = {
-    success: 'bg-green-50 border-green-200',
-    error: 'bg-red-50 border-red-200',
-    warning: 'bg-amber-50 border-amber-200',
-    info: 'bg-blue-50 border-blue-200',
+    success: 'bg-green-50 border-green-200 dark:bg-green-500/10 dark:border-green-500/20',
+    error: 'bg-red-50 border-red-200 dark:bg-red-500/10 dark:border-red-500/20',
+    warning: 'bg-amber-50 border-amber-200 dark:bg-amber-500/10 dark:border-amber-500/20',
+    info: 'bg-blue-50 border-blue-200 dark:bg-blue-500/10 dark:border-blue-500/20',
   };
 
   return (
     <div className={`flex items-center gap-3 p-4 rounded-lg border shadow-lg ${backgrounds[type]} animate-slide-in`}>
       {icons[type]}
-      <p className="flex-1 text-sm font-medium text-slate-900">{message}</p>
+      <p className="flex-1 text-sm font-medium text-slate-900 dark:text-slate-50">{message}</p>
       <button
         onClick={onClose}
-        className="text-slate-400 hover:text-slate-600 transition-colors"
+        className="text-slate-400 hover:text-slate-600 dark:text-slate-300 dark:hover:text-white transition-colors"
       >
         <X size={18} />
       </button>

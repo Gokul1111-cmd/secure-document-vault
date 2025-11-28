@@ -72,8 +72,8 @@ function AllDocuments() {
   return (
     <div className="space-y-6 lg:space-y-8">
       <header className="space-y-1.5">
-        <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">All Documents</h1>
-        <p className="text-sm text-slate-600 sm:text-base">Review and manage every document uploaded across the organization.</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">All Documents</h1>
+        <p className="text-sm text-slate-600 dark:text-slate-400 sm:text-base">Review and manage every document uploaded across the organization.</p>
       </header>
 
       {loading ? (
@@ -84,11 +84,11 @@ function AllDocuments() {
         <>
           {/* Statistics */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 xl:gap-6">
-            <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
+            <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200 dark:from-blue-500/15 dark:to-blue-500/5 dark:border-blue-500/30">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-blue-600 sm:text-sm">Total Documents</p>
-                  <p className="text-xl font-bold text-blue-900 sm:text-2xl">{stats.total}</p>
+                  <p className="text-xs font-medium text-blue-600 dark:text-blue-200 sm:text-sm">Total Documents</p>
+                  <p className="text-xl font-bold text-blue-900 dark:text-blue-100 sm:text-2xl">{stats.total}</p>
                 </div>
                 <div className="p-3 bg-blue-600 rounded-lg">
                   <FileText className="h-5 w-5 text-white" />
@@ -96,11 +96,11 @@ function AllDocuments() {
               </div>
             </Card>
 
-            <Card className="bg-gradient-to-r from-emerald-50 to-emerald-100 border-emerald-200">
+            <Card className="bg-gradient-to-r from-emerald-50 to-emerald-100 border-emerald-200 dark:from-emerald-500/15 dark:to-emerald-500/5 dark:border-emerald-500/30">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-emerald-600 sm:text-sm">Total Downloads</p>
-                  <p className="text-xl font-bold text-emerald-900 sm:text-2xl">{stats.totalDownloads}</p>
+                  <p className="text-xs font-medium text-emerald-600 dark:text-emerald-200 sm:text-sm">Total Downloads</p>
+                  <p className="text-xl font-bold text-emerald-900 dark:text-emerald-100 sm:text-2xl">{stats.totalDownloads}</p>
                 </div>
                 <div className="p-3 bg-emerald-600 rounded-lg">
                   <Download className="h-5 w-5 text-white" />
@@ -108,11 +108,11 @@ function AllDocuments() {
               </div>
             </Card>
 
-            <Card className="bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200">
+            <Card className="bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200 dark:from-purple-500/15 dark:to-purple-500/5 dark:border-purple-500/30">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-purple-600 sm:text-sm">Storage Used</p>
-                  <p className="text-xl font-bold text-purple-900 sm:text-2xl">{formatFileSize(stats.totalSize)}</p>
+                  <p className="text-xs font-medium text-purple-600 dark:text-purple-200 sm:text-sm">Storage Used</p>
+                  <p className="text-xl font-bold text-purple-900 dark:text-purple-100 sm:text-2xl">{formatFileSize(stats.totalSize)}</p>
                 </div>
                 <div className="p-3 bg-purple-600 rounded-lg">
                   <HardDrive className="h-5 w-5 text-white" />
@@ -132,7 +132,7 @@ function AllDocuments() {
                   icon={<Search size={18} />}
                   className="w-full sm:max-w-xs"
                 />
-                <p className="text-xs text-slate-500 sm:text-sm">
+                <p className="text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
                   Showing {filteredDocuments.length} of {stats.total} documents
                 </p>
               </div>
@@ -143,7 +143,7 @@ function AllDocuments() {
           <Card>
             <Card.Header className="space-y-1">
               <Card.Title>All Documents</Card.Title>
-              <p className="text-xs text-slate-500 sm:text-sm">Showing {filteredDocuments.length} of {stats.total} documents.</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 sm:text-sm">Showing {filteredDocuments.length} of {stats.total} documents.</p>
             </Card.Header>
             <Card.Content>
               <Table>
@@ -164,38 +164,38 @@ function AllDocuments() {
                         <div className="flex items-start space-x-3">
                           <FileText className="mt-0.5 h-5 w-5 text-blue-600" />
                           <div>
-                            <p className="text-sm font-medium text-slate-900 sm:text-base">{doc.fileName}</p>
-                            <p className="text-xs text-slate-500">{doc.mimeType}</p>
+                            <p className="text-sm font-medium text-slate-900 dark:text-white sm:text-base">{doc.fileName}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{doc.mimeType}</p>
                           </div>
                         </div>
                       </Table.Cell>
                       <Table.Cell>
                         <div>
-                          <p className="text-sm font-medium text-slate-900 sm:text-base">{doc.owner.name}</p>
-                          <p className="text-xs text-slate-600 sm:text-sm">{doc.owner.email}</p>
+                          <p className="text-sm font-medium text-slate-900 dark:text-white sm:text-base">{doc.owner.name}</p>
+                          <p className="text-xs text-slate-600 dark:text-slate-300 sm:text-sm">{doc.owner.email}</p>
                         </div>
                       </Table.Cell>
                       <Table.Cell>
-                        <span className="text-sm text-slate-600 sm:text-base">{formatFileSize(doc.fileSize)}</span>
+                        <span className="text-sm text-slate-600 dark:text-slate-300 sm:text-base">{formatFileSize(doc.fileSize)}</span>
                       </Table.Cell>
                       <Table.Cell>
-                        <div className="text-xs text-slate-600 sm:text-sm">
-                          <div className="font-medium text-slate-900">
+                        <div className="text-xs text-slate-600 dark:text-slate-300 sm:text-sm">
+                          <div className="font-medium text-slate-900 dark:text-white">
                             {new Date(doc.createdAt).toLocaleDateString()}
                           </div>
-                          <div className="text-slate-500">
+                          <div className="text-slate-500 dark:text-slate-400">
                             {new Date(doc.createdAt).toLocaleTimeString()}
                           </div>
                         </div>
                       </Table.Cell>
                       <Table.Cell>
-                        <div className="flex items-center space-x-1 text-sm sm:text-base">
+                        <div className="flex items-center space-x-1 text-sm text-slate-600 dark:text-slate-300 sm:text-base">
                           <Download size={14} className="text-slate-400" />
-                          <span className="text-slate-600">{doc.downloadCount}</span>
+                          <span>{doc.downloadCount}</span>
                         </div>
                       </Table.Cell>
                       <Table.Cell>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200">
                           Encrypted
                         </span>
                       </Table.Cell>
@@ -205,7 +205,7 @@ function AllDocuments() {
               </Table>
 
               {filteredDocuments.length === 0 && (
-                <div className="text-center py-10 text-slate-500">
+                <div className="text-center py-10 text-slate-500 dark:text-slate-400">
                   <FileText className="h-10 w-10 mx-auto mb-3 text-slate-300" />
                   <p className="text-sm sm:text-base">No documents found matching your criteria.</p>
                 </div>
@@ -221,19 +221,19 @@ function AllDocuments() {
             <Card.Content>
               <div className="space-y-3">
                 {users.map((u) => (
-                  <div key={u.id} className="flex flex-col gap-3 rounded-lg bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+                  <div key={u.id} className="flex flex-col gap-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-transparent dark:border-slate-700 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
                     <div className="flex items-center space-x-3">
                       <div className="rounded-lg bg-blue-100 p-2">
                         <User className="h-5 w-5 text-blue-600" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-slate-900 sm:text-base">{u.name}</p>
-                        <p className="text-xs text-slate-600 sm:text-sm">{u.email}</p>
+                        <p className="text-sm font-medium text-slate-900 dark:text-white sm:text-base">{u.name}</p>
+                        <p className="text-xs text-slate-600 dark:text-slate-300 sm:text-sm">{u.email}</p>
                       </div>
                     </div>
-                    <div className="text-left text-xs text-slate-500 sm:text-right sm:text-sm">
-                      <p className="font-medium text-slate-600">Member since</p>
-                      <p className="text-slate-900">
+                    <div className="text-left text-xs text-slate-500 dark:text-slate-400 sm:text-right sm:text-sm">
+                      <p className="font-medium text-slate-600 dark:text-slate-300">Member since</p>
+                      <p className="text-slate-900 dark:text-white">
                         {new Date(u.createdAt).toLocaleDateString()}
                       </p>
                     </div>

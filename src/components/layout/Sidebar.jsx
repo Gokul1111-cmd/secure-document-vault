@@ -29,17 +29,17 @@ function Sidebar({ isMobileOpen = false, onClose = () => {} }) {
         onClick={onClose}
       />
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-60 sm:w-56 lg:w-56 xl:w-60 bg-white border-r border-slate-200 shadow-sm transform transition-transform duration-200 lg:static lg:translate-x-0 lg:shadow-none ${
+        className={`fixed inset-y-0 left-0 z-50 w-60 sm:w-56 lg:w-56 xl:w-60 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-sm transform transition-transform duration-200 lg:static lg:translate-x-0 lg:shadow-none ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         aria-label="Sidebar navigation"
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 lg:hidden">
-          <span className="text-sm font-semibold text-slate-700">Navigation</span>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800 lg:hidden">
+          <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Navigation</span>
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center justify-center p-2 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="inline-flex items-center justify-center p-2 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
             aria-label="Close sidebar"
           >
             <X className="h-4 w-4" />
@@ -58,11 +58,11 @@ function Sidebar({ isMobileOpen = false, onClose = () => {} }) {
                   onClick={onClose}
                   className={`flex items-center space-x-3 rounded-lg px-3 py-2 text-sm transition-all duration-200 ${
                     isActive
-                      ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 dark:from-blue-500/20 dark:to-blue-500/10 dark:text-blue-100'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white'
                   }`}
                 >
-                  <Icon size={16} className={isActive ? 'text-blue-600' : ''} />
+                  <Icon size={16} className={isActive ? 'text-blue-600 dark:text-blue-300' : ''} />
                   <span className="font-medium leading-tight">{item.label}</span>
                 </Link>
               );

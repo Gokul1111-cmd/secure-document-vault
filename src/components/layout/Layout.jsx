@@ -7,7 +7,7 @@ function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-900 dark:from-slate-900 dark:to-slate-950 dark:text-slate-100">
       <Navbar onToggleSidebar={() => setSidebarOpen((prev) => !prev)} />
       <div className="relative lg:flex">
         <Sidebar isMobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />

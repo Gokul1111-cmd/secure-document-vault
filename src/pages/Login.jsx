@@ -2,15 +2,17 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../components/ui/ToastContainer.jsx';
-import { Shield, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Shield, Mail, Lock, Eye, EyeOff, Sun, Moon } from 'lucide-react';
 import Button from '../components/ui/Button.jsx';
 import Input from '../components/ui/Input.jsx';
 import Card from '../components/ui/Card.jsx';
+import { useTheme } from '../context/ThemeContext.jsx';
 
 function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const { showToast } = useToast();
+  const { theme, toggleTheme } = useTheme();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -39,14 +41,24 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950 transition-colors">
       <div className="w-full max-w-md">
+        <div className="flex justify-end mb-4">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="inline-flex items-center justify-center rounded-full p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800 transition-colors"
+            aria-label="Toggle theme"
+          >
+            {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+          </button>
+        </div>
         <div className="text-center mb-8">
           <div className="inline-flex p-3 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl mb-4">
             <Shield className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome Back</h1>
-          <p className="text-slate-600">Sign in to access your secure vault</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Welcome Back</h1>
+          <p className="text-slate-600 dark:text-slate-400">Sign in to access your secure vault</p>
         </div>
 
         <Card>
@@ -73,7 +85,7 @@ function Login() {
               />
               <button
                 type="button"
-                className="absolute right-4 top-9 text-slate-400 hover:text-slate-600"
+                className="absolute right-4 top-9 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -81,7 +93,7 @@ function Login() {
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              <div className="bg-red-50 border border-red-200 text-red-700 dark:bg-red-500/10 dark:border-red-500/30 dark:text-red-200 px-4 py-3 rounded-lg">
                 {error}
               </div>
             )}
@@ -99,7 +111,7 @@ function Login() {
           <div className="mt-6 text-center">
             <Link
               to="/register"
-              className="text-blue-600 hover:text-blue-700 font-medium"
+              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
             >
               Don't have an account? Sign up
             </Link>

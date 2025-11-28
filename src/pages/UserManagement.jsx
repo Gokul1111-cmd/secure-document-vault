@@ -142,8 +142,8 @@ function UserManagement() {
   return (
     <div className="space-y-6 lg:space-y-8">
       <div className="space-y-1.5">
-        <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">User Management</h1>
-        <p className="text-sm text-slate-600 sm:text-base">Manage user accounts, roles, and permissions.</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">User Management</h1>
+        <p className="text-sm text-slate-600 dark:text-slate-400 sm:text-base">Manage user accounts, roles, and permissions.</p>
       </div>
 
       {loading ? (
@@ -154,11 +154,11 @@ function UserManagement() {
         <>
           {/* Statistics */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:gap-6">
-            <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
+            <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200 dark:from-blue-500/15 dark:to-blue-500/5 dark:border-blue-500/30">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium text-blue-600 sm:text-sm">Total Users</p>
-                  <p className="text-xl font-bold text-blue-900 sm:text-2xl">{stats.total}</p>
+                  <p className="text-xl font-bold text-blue-900 dark:text-white sm:text-2xl">{stats.total}</p>
                 </div>
                 <div className="rounded-lg bg-blue-600 p-3">
                   <Users className="h-5 w-5 text-white" />
@@ -166,11 +166,11 @@ function UserManagement() {
               </div>
             </Card>
 
-            <Card className="bg-gradient-to-r from-emerald-50 to-emerald-100 border-emerald-200">
+            <Card className="bg-gradient-to-r from-emerald-50 to-emerald-100 border-emerald-200 dark:from-emerald-500/15 dark:to-emerald-500/5 dark:border-emerald-500/30">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium text-emerald-600 sm:text-sm">Active Users</p>
-                  <p className="text-xl font-bold text-emerald-900 sm:text-2xl">{stats.active}</p>
+                  <p className="text-xl font-bold text-emerald-900 dark:text-white sm:text-2xl">{stats.active}</p>
                 </div>
                 <div className="rounded-lg bg-emerald-600 p-3">
                   <Shield className="h-5 w-5 text-white" />
@@ -178,11 +178,11 @@ function UserManagement() {
               </div>
             </Card>
 
-            <Card className="bg-gradient-to-r from-red-50 to-red-100 border-red-200">
+            <Card className="bg-gradient-to-r from-red-50 to-red-100 border-red-200 dark:from-red-500/15 dark:to-red-500/5 dark:border-red-500/30">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium text-red-600 sm:text-sm">Locked Accounts</p>
-                  <p className="text-xl font-bold text-red-900 sm:text-2xl">{stats.locked}</p>
+                  <p className="text-xl font-bold text-red-900 dark:text-white sm:text-2xl">{stats.locked}</p>
                 </div>
                 <div className="rounded-lg bg-red-600 p-3">
                   <Lock className="h-5 w-5 text-white" />
@@ -190,11 +190,11 @@ function UserManagement() {
               </div>
             </Card>
 
-            <Card className="bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200">
+            <Card className="bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200 dark:from-slate-700/40 dark:to-slate-800/40 dark:border-slate-700">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium text-slate-600 sm:text-sm">Inactive Users</p>
-                  <p className="text-xl font-bold text-slate-900 sm:text-2xl">{stats.inactive}</p>
+                  <p className="text-xl font-bold text-slate-900 dark:text-white sm:text-2xl">{stats.inactive}</p>
                 </div>
                 <div className="rounded-lg bg-slate-600 p-3">
                   <AlertTriangle className="h-5 w-5 text-white" />
@@ -219,7 +219,7 @@ function UserManagement() {
                   <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 sm:w-auto"
+                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 sm:w-auto"
                   >
                     <option value="all">All Status</option>
                     <option value="ACTIVE">Active</option>
@@ -253,12 +253,12 @@ function UserManagement() {
                   {filteredUsers.map((u) => (
                     <Table.Row key={u.id}>
                       <Table.Cell>
-                        <div className="text-sm font-medium text-slate-900 sm:text-base">{u.name}</div>
+                        <div className="text-sm font-medium text-slate-900 dark:text-white sm:text-base">{u.name}</div>
                       </Table.Cell>
                       <Table.Cell>
                         <div className="flex items-center space-x-2">
                           <Mail size={14} className="text-slate-400" />
-                          <span className="text-xs text-slate-600 sm:text-sm">{u.email}</span>
+                          <span className="text-xs text-slate-600 dark:text-slate-300 sm:text-sm">{u.email}</span>
                         </div>
                       </Table.Cell>
                       <Table.Cell>
@@ -268,12 +268,12 @@ function UserManagement() {
                         {getStatusBadge(u.status)}
                       </Table.Cell>
                       <Table.Cell>
-                        <span className={`text-sm ${u.failedAttempts > 0 ? 'text-red-600 font-medium' : 'text-slate-600'}`}>
+                        <span className={`text-sm ${u.failedAttempts > 0 ? 'text-red-600 font-medium' : 'text-slate-600 dark:text-slate-300'}`}>
                           {u.failedAttempts}
                         </span>
                       </Table.Cell>
                       <Table.Cell>
-                        <div className="text-xs text-slate-600 sm:text-sm">
+                        <div className="text-xs text-slate-600 dark:text-slate-300 sm:text-sm">
                           {u.lastLogin ? new Date(u.lastLogin).toLocaleString() : 'Never'}
                         </div>
                       </Table.Cell>
@@ -305,7 +305,7 @@ function UserManagement() {
                             size="sm"
                             onClick={() => handleDeleteClick(u)}
                             disabled={u.role === 'ADMIN'}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 dark:text-red-300 dark:hover:text-red-200 dark:hover:bg-red-900/20 dark:border-red-500/40"
                             title="Delete User"
                           >
                             <Trash2 size={14} />
@@ -318,7 +318,7 @@ function UserManagement() {
               </Table>
 
               {filteredUsers.length === 0 && (
-                <div className="py-10 text-center text-slate-500">
+                <div className="py-10 text-center text-slate-500 dark:text-slate-400">
                   <Users className="mx-auto mb-3 h-10 w-10 text-slate-300" />
                   <p className="text-sm sm:text-base">No users found matching your criteria.</p>
                 </div>
