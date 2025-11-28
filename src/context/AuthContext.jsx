@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authAPI } from '../services/api.js';
+import { useLoadingOverlay } from './LoadingOverlayContext.jsx';
 
 const AuthContext = createContext();
 
@@ -15,6 +16,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const { withLoading } = useLoadingOverlay();
 
   useEffect(() => {
     // Check for stored user session
@@ -28,33 +30,37 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
-  const login = async (email, password) => {
-    try {
-      const response = await authAPI.login({ email, password });
-      const { user: userData, accessToken, refreshToken } = response.data.data;
-      
-      setUser(userData);
-      setIsAuthenticated(true);
-      localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
-      
-      return { success: true };
-    } catch (error) {
-      const message = error.response?.data?.message || 'Invalid credentials';
-      return { success: false, error: message };
-    }
-  };
+  const login = useCallback(async (email, password) => {
+    return withLoading(async () => {
+      try {
+        const response = await authAPI.login({ email, password });
+        const { user: userData, accessToken, refreshToken } = response.data.data;
+        
+        setUser(userData);
+        setIsAuthenticated(true);
+        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('refreshToken', refreshToken);
+        
+        return { success: true };
+      } catch (error) {
+        const message = error.response?.data?.message || 'Invalid credentials';
+        return { success: false, error: message };
+      }
+    }, 'Signing you in...');
+  }, [withLoading]);
 
-  const register = async (userData) => {
-    try {
-      const response = await authAPI.register(userData);
-      return { success: true, message: response.data.message };
-    } catch (error) {
-      const message = error.response?.data?.message || 'Registration failed';
-      return { success: false, error: message };
-    }
-  };
+  const register = useCallback(async (userData) => {
+    return withLoading(async () => {
+      try {
+        const response = await authAPI.register(userData);
+        return { success: true, message: response.data.message };
+      } catch (error) {
+        const message = error.response?.data?.message || 'Registration failed';
+        return { success: false, error: message };
+      }
+    }, 'Creating your account...');
+  }, [withLoading]);
 
   const logout = () => {
     setUser(null);
@@ -64,14 +70,16 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('refreshToken');
   };
 
-  const verifyPassword = async (password) => {
-    try {
-      await authAPI.verifyPassword(password);
-      return true;
-    } catch (error) {
-      return false;
-    }
-  };
+  const verifyPassword = useCallback(async (password) => {
+    return withLoading(async () => {
+      try {
+        await authAPI.verifyPassword(password);
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }, 'Verifying identity...');
+  }, [withLoading]);
 
   const value = {
     user,

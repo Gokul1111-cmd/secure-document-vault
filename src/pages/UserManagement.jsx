@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useLoadingOverlay } from '../context/LoadingOverlayContext.jsx';
 import { useToast } from '../components/ui/ToastContainer.jsx';
 import { adminAPI } from '../services/api.js';
 import { Users, Search, Lock, Unlock, Mail, Shield, AlertTriangle, Trash2 } from 'lucide-react';
@@ -14,6 +15,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog.jsx';
 function UserManagement() {
   const { user } = useAuth();
   const { showToast } = useToast();
+  const { withLoading } = useLoadingOverlay();
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -58,23 +60,27 @@ function UserManagement() {
   };
 
   const handleLockUser = async (userId) => {
-    try {
-      await adminAPI.lockUser(userId);
-      showToast('User locked successfully', 'success');
-      fetchUsers();
-    } catch (error) {
-      showToast(error.response?.data?.message || 'Failed to lock user', 'error');
-    }
+    await withLoading(async () => {
+      try {
+        await adminAPI.lockUser(userId);
+        showToast('User locked successfully', 'success');
+        await fetchUsers();
+      } catch (error) {
+        showToast(error.response?.data?.message || 'Failed to lock user', 'error');
+      }
+    }, 'Locking account...');
   };
 
   const handleUnlockUser = async (userId) => {
-    try {
-      await adminAPI.unlockUser(userId);
-      showToast('User unlocked successfully', 'success');
-      fetchUsers();
-    } catch (error) {
-      showToast(error.response?.data?.message || 'Failed to unlock user', 'error');
-    }
+    await withLoading(async () => {
+      try {
+        await adminAPI.unlockUser(userId);
+        showToast('User unlocked successfully', 'success');
+        await fetchUsers();
+      } catch (error) {
+        showToast(error.response?.data?.message || 'Failed to unlock user', 'error');
+      }
+    }, 'Unlocking account...');
   };
 
   const handleDeleteClick = (user) => {
@@ -85,16 +91,18 @@ function UserManagement() {
   const confirmDeleteUser = async () => {
     if (!userToDelete) return;
 
-    try {
-      await adminAPI.deleteUser(userToDelete.id);
-      showToast('User deleted successfully', 'success');
-      fetchUsers();
-    } catch (error) {
-      showToast(error.response?.data?.message || 'Failed to delete user', 'error');
-    } finally {
-      setShowDeleteConfirm(false);
-      setUserToDelete(null);
-    }
+    await withLoading(async () => {
+      try {
+        await adminAPI.deleteUser(userToDelete.id);
+        showToast('User deleted successfully', 'success');
+        await fetchUsers();
+      } catch (error) {
+        showToast(error.response?.data?.message || 'Failed to delete user', 'error');
+      } finally {
+        setShowDeleteConfirm(false);
+        setUserToDelete(null);
+      }
+    }, 'Deleting user...');
   };
 
   const filteredUsers = users.filter(u => {

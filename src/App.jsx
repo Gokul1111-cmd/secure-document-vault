@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import { ToastProvider } from './components/ui/ToastContainer.jsx';
+import { LoadingOverlayProvider } from './context/LoadingOverlayContext.jsx';
+import LoadingOverlay from './components/ui/LoadingOverlay.jsx';
 import Layout from './components/layout/Layout.jsx';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
@@ -74,15 +76,18 @@ function AppRoutes() {
 
 function App() {
   return (
-    <AuthProvider>
-      <ToastProvider>
-        <Router>
-          <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-            <AppRoutes />
-          </div>
-        </Router>
-      </ToastProvider>
-    </AuthProvider>
+    <LoadingOverlayProvider>
+      <AuthProvider>
+        <ToastProvider>
+          <Router>
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+              <AppRoutes />
+            </div>
+            <LoadingOverlay />
+          </Router>
+        </ToastProvider>
+      </AuthProvider>
+    </LoadingOverlayProvider>
   );
 }
 
