@@ -19,14 +19,9 @@ const initializeFirebase = () => {
 
   try {
     firebaseApp = admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId,
-        clientEmail,
-        privateKey,
-      }),
+      credential: admin.credential.cert({ projectId, clientEmail, privateKey }),
       storageBucket: storageBucket || `${projectId}.appspot.com`,
     });
-
     bucket = admin.storage().bucket();
     console.log('✓ Firebase Storage initialized');
   } catch (error) {
@@ -34,50 +29,41 @@ const initializeFirebase = () => {
   }
 };
 
-
-const uploadEncryptedFile = async (encryptedBuffer, fileName, mimeType) => {
-  if (!bucket) {
-    throw new Error('Firebase Storage not initialized');
-  }
+const uploadEncryptedStream = (readStream, fileName, mimeType) => {
+  if (!bucket) throw new Error('Firebase Storage not initialized');
 
   const uniqueFileName = `${uuidv4()}_${fileName}`;
   const file = bucket.file(`encrypted/${uniqueFileName}`);
-
-  await file.save(encryptedBuffer, {
+  const writeStream = file.createWriteStream({
     metadata: {
       contentType: 'application/octet-stream',
-      metadata: {
-        originalName: fileName,
-        originalMimeType: mimeType,
-      },
+      metadata: { originalName: fileName, originalMimeType: mimeType },
     },
+    resumable: false // Set to true for very large files if needed
   });
 
-  return `encrypted/${uniqueFileName}`;
+  return new Promise((resolve, reject) => {
+    readStream.pipe(writeStream)
+      .on('error', reject)
+      .on('finish', () => resolve(`encrypted/${uniqueFileName}`));
+  });
 };
 
-const downloadEncryptedFile = async (storagePath) => {
-  if (!bucket) {
-    throw new Error('Firebase Storage not initialized');
-  }
-
+const getDownloadStream = (storagePath) => {
+  if (!bucket) throw new Error('Firebase Storage not initialized');
   const file = bucket.file(storagePath);
-  const [buffer] = await file.download();
-  return buffer;
+  return file.createReadStream();
 };
 
 const deleteFile = async (storagePath) => {
-  if (!bucket) {
-    throw new Error('Firebase Storage not initialized');
-  }
-
+  if (!bucket) throw new Error('Firebase Storage not initialized');
   const file = bucket.file(storagePath);
   await file.delete();
 };
 
 module.exports = {
   initializeFirebase,
-  uploadEncryptedFile,
-  downloadEncryptedFile,
+  uploadEncryptedStream,
+  getDownloadStream,
   deleteFile,
 };

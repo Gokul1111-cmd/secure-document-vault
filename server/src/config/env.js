@@ -18,18 +18,30 @@ const parseOrigins = (value) => {
     .filter((origin) => origin.length > 0);
 };
 
+const classifyOrigins = (origins) => origins.reduce((acc, origin) => {
+  if (origin.includes('*')) {
+    acc.wildcard.push(origin);
+  } else {
+    acc.exact.push(origin);
+  }
+  return acc;
+}, { exact: [], wildcard: [] });
+
 const toNumber = (value, fallback) => {
   const parsed = Number(value);
   return Number.isNaN(parsed) ? fallback : parsed;
 };
 
-const clientOrigins = parseOrigins(getEnv('CLIENT_ORIGIN', 'http://localhost:5173'));
+const rawOrigins = parseOrigins(getEnv('CLIENT_ORIGIN', 'http://localhost:5173'));
+const classifiedOrigins = classifyOrigins(rawOrigins);
 
 module.exports = {
   nodeEnv: getEnv('NODE_ENV', 'development'),
   port: toNumber(getEnv('PORT', '5000'), 5000),
-  clientOrigin: clientOrigins[0] || 'http://localhost:5173',
-  clientOrigins: clientOrigins.length > 0 ? clientOrigins : ['http://localhost:5173'],
+  clientOrigin: rawOrigins[0] || 'http://localhost:5173',
+  clientOrigins: rawOrigins.length > 0 ? rawOrigins : ['http://localhost:5173'],
+  clientOriginWildcards: classifiedOrigins.wildcard,
+  clientOriginExact: classifiedOrigins.exact.length > 0 ? classifiedOrigins.exact : ['http://localhost:5173'],
   rateLimitWindowMs: toNumber(getEnv('RATE_LIMIT_WINDOW', '15'), 15) * 60 * 1000,
   rateLimitMax: toNumber(getEnv('RATE_LIMIT_MAX', '100'), 100),
   jwtAccessSecret: getEnv('JWT_ACCESS_SECRET', 'change-me'),

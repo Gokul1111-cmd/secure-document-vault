@@ -1,20 +1,18 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const { Transform, PassThrough } = require('stream');
 
 let privateKey = null;
 let publicKey = null;
 
 const getInlineKey = (envValue) => {
   if (!envValue || !envValue.length) return null;
-  // Support both raw multiline keys and escaped newlines from env storage
   return envValue.replace(/\\n/g, '\n').replace(/\r?\n/g, '\n');
 };
 
 const loadKeys = () => {
-  if (privateKey && publicKey) {
-    return;
-  }
+  if (privateKey && publicKey) return;
 
   const inlinePrivate = getInlineKey(process.env.RSA_PRIVATE_KEY);
   const inlinePublic = getInlineKey(process.env.RSA_PUBLIC_KEY);
@@ -36,66 +34,118 @@ const loadKeys = () => {
   publicKey = fs.readFileSync(publicKeyPath, 'utf8');
 };
 
-const generateAESKey = () => {
-  return crypto.randomBytes(32);
-};
+const generateAESKey = () => crypto.randomBytes(32);
 
-const encryptFileBuffer = (fileBuffer, aesKey) => {
+// STREAMING ENCRYPTION
+// Format: IV (12 bytes) + Encrypted Data + Auth Tag (16 bytes)
+const createEncryptStream = (aesKey) => {
   const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv('aes-256-gcm', aesKey, iv);
+  
+  const output = new PassThrough();
+  
+  // 1. Write IV to the beginning of the stream
+  output.write(iv);
+  
+  // 2. Pipe cipher data to output
+  cipher.on('data', (chunk) => output.write(chunk));
+  
+  // 3. On completion, append AuthTag and end stream
+  cipher.on('end', () => {
+    output.write(cipher.getAuthTag());
+    output.end();
+  });
 
-  const encrypted = Buffer.concat([cipher.update(fileBuffer), cipher.final()]);
-  const authTag = cipher.getAuthTag();
-
-  return Buffer.concat([iv, authTag, encrypted]);
+  return { cipher, output };
 };
 
-const decryptFileBuffer = (encryptedBuffer, aesKey) => {
-  const iv = encryptedBuffer.slice(0, 12);
-  const authTag = encryptedBuffer.slice(12, 28);
-  const encrypted = encryptedBuffer.slice(28);
+// STREAMING DECRYPTION
+// Handles parsing IV from start and Tag from end
+const createDecryptStream = (aesKey) => {
+  const ivLength = 12;
+  const tagLength = 16;
+  let ivRead = false;
+  let ivBuffer = Buffer.alloc(0);
+  let tagBuffer = Buffer.alloc(0);
+  let decipher = null;
 
-  const decipher = crypto.createDecipheriv('aes-256-gcm', aesKey, iv);
-  decipher.setAuthTag(authTag);
+  return new Transform({
+    transform(chunk, encoding, callback) {
+      let data = chunk;
 
-  return Buffer.concat([decipher.update(encrypted), decipher.final()]);
+      // 1. Extract IV from the start of the stream
+      if (!ivRead) {
+        ivBuffer = Buffer.concat([ivBuffer, data]);
+        if (ivBuffer.length >= ivLength) {
+          const iv = ivBuffer.slice(0, ivLength);
+          decipher = crypto.createDecipheriv('aes-256-gcm', aesKey, iv);
+          ivRead = true;
+          data = ivBuffer.slice(ivLength); // Process remaining data in this chunk
+        } else {
+          return callback(); // Wait for more data
+        }
+      }
+
+      if (data.length === 0) return callback();
+
+      // 2. Buffer the last 16 bytes (Auth Tag)
+      const total = Buffer.concat([tagBuffer, data]);
+      
+      if (total.length > tagLength) {
+        // Everything except the last 16 bytes is ciphertext
+        const toDecrypt = total.slice(0, total.length - tagLength);
+        tagBuffer = total.slice(total.length - tagLength);
+        
+        try {
+          const decrypted = decipher.update(toDecrypt);
+          this.push(decrypted);
+        } catch (err) {
+          return callback(err);
+        }
+      } else {
+        tagBuffer = total;
+      }
+      
+      callback();
+    },
+
+    flush(callback) {
+      if (!decipher) return callback(new Error('Stream too short or empty'));
+      
+      try {
+        // 3. Set Auth Tag and finalize
+        decipher.setAuthTag(tagBuffer);
+        const final = decipher.final();
+        this.push(final);
+        callback();
+      } catch (err) {
+        callback(new Error('Decryption failed: Invalid password or corrupted file'));
+      }
+    }
+  });
 };
 
 const wrapAESKey = (aesKey) => {
   if (!publicKey) loadKeys();
-
-  const encrypted = crypto.publicEncrypt(
-    {
-      key: publicKey,
-      padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
-      oaepHash: 'sha256',
-    },
-    aesKey,
-  );
-
-  return encrypted.toString('base64');
+  return crypto.publicEncrypt(
+    { key: publicKey, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING, oaepHash: 'sha256' },
+    aesKey
+  ).toString('base64');
 };
 
 const unwrapAESKey = (wrappedKey) => {
   if (!privateKey) loadKeys();
-
-  const decrypted = crypto.privateDecrypt(
-    {
-      key: privateKey,
-      padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
-      oaepHash: 'sha256',
-    },
-    Buffer.from(wrappedKey, 'base64'),
+  return crypto.privateDecrypt(
+    { key: privateKey, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING, oaepHash: 'sha256' },
+    Buffer.from(wrappedKey, 'base64')
   );
-
-  return decrypted;
 };
 
 module.exports = {
   loadKeys,
   generateAESKey,
-  encryptFileBuffer,
-  decryptFileBuffer,
+  createEncryptStream,
+  createDecryptStream,
   wrapAESKey,
   unwrapAESKey,
 };

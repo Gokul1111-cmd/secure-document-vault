@@ -15,23 +15,30 @@ const app = express();
 app.set('trust proxy', 1);
 app.use(helmet());
 // Allow multiple dev origins (Vite may shift ports if 5173 busy) and production domains
-const allowedOrigins = new Set([
-  ...env.clientOrigins,
+const allowedExactOrigins = new Set([
+  ...env.clientOriginExact,
   'http://localhost:5174',
 ]);
 
+const wildcardRegexes = env.clientOriginWildcards.map((pattern) => {
+  const escaped = pattern.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+  const regexSource = `^${escaped.replace(/\\\*/g, '.*')}$`;
+  return new RegExp(regexSource);
+});
+
 if (process.env.VERCEL_URL) {
-  allowedOrigins.add(`https://${process.env.VERCEL_URL}`);
+  allowedExactOrigins.add(`https://${process.env.VERCEL_URL}`);
 }
 
 if (process.env.RENDER_EXTERNAL_URL) {
-  allowedOrigins.add(process.env.RENDER_EXTERNAL_URL);
+  allowedExactOrigins.add(process.env.RENDER_EXTERNAL_URL);
 }
 
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true); // non-browser or same-origin
-    if (allowedOrigins.has(origin)) return callback(null, true);
+    if (allowedExactOrigins.has(origin)) return callback(null, true);
+    if (wildcardRegexes.some((regex) => regex.test(origin))) return callback(null, true);
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
