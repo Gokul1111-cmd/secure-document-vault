@@ -11,6 +11,8 @@
     "generate:prisma": "npm run --prefix server prisma:generate"
   },
   "dependencies": {
+    "@react-three/drei": "^9.105.0",
+    "@react-three/fiber": "^8.16.0",
     "@supabase/supabase-js": "^2.57.4",
     "axios": "^1.13.2",
     "clsx": "^2.1.1",
@@ -22,7 +24,7 @@
     "react-router-dom": "^7.9.2",
     "recharts": "^3.5.1",
     "tailwind-merge": "^3.4.0",
-    "three": "^0.181.2"
+    "three": "^0.162.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
