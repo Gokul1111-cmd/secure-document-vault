@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../components/ui/ToastContainer.jsx';
-import { Shield, Mail, Lock, User, Eye, EyeOff, ArrowLeft, Cpu } from 'lucide-react';
+import { Shield, Mail, Lock, User, ArrowLeft, AlertTriangle, Cpu, Database } from 'lucide-react';
 import Secure3DScene from '../components/three/Secure3DScene.jsx';
 
 function Register() {
@@ -15,149 +15,141 @@ function Register() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (formData.password !== formData.confirmPassword) {
+        setError("Encryption keys (passwords) do not match.");
+        return;
+    }
     setLoading(true);
-    setError('');
     try {
       const result = await register({
         name: formData.name, email: formData.email, password: formData.password, pin: formData.pin
       });
       if (result.success) {
-        showToast('Clearance Granted. Proceed to Login.', 'success');
+        showToast('Identity Key Forged. Proceed to Access Point.', 'success');
         setTimeout(() => navigate('/login'), 1500);
       } else {
         setError(result.error);
+        setLoading(false);
       }
     } catch (err) {
-      setError('Registration failed');
-    } finally {
+      setError('Registration Failed');
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex bg-navy-900 text-slate-100 overflow-hidden font-sans selection:bg-cyber selection:text-white">
+    <div className="min-h-screen flex bg-space-950 text-white font-sans overflow-hidden">
       
-      {/* LEFT: 3D VAULT */}
+      {/* LEFT: 3D SCENE (Idle) */}
       <div className="hidden lg:block lg:w-1/2 relative h-screen">
         <Secure3DScene focusState="none" loginStatus="idle" />
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent to-navy-900 pointer-events-none" />
-        <div className="absolute bottom-10 left-10 font-mono text-xs text-neon-cyan/60 tracking-widest">
-          INITIALIZING_NEW_USER<br/>
-          KEY_GENERATION: PENDING
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent to-space-950 z-10" />
+        
+        <div className="absolute top-1/2 left-16 transform -translate-y-1/2 z-20 max-w-md">
+             <div className="h-0.5 w-12 bg-neon-cyan mb-6" />
+             <h2 className="text-5xl font-bold text-white mb-6 leading-tight tracking-tight">
+                Initiate <br/>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan to-cyber">Security Clearance</span>
+             </h2>
+             <p className="text-slate-400 text-lg leading-relaxed font-light">
+                Forge your identity key and encrypt your personal document vault.
+             </p>
+             
+             <div className="mt-10 flex flex-col gap-4">
+                 <div className="flex items-center gap-4 p-4 rounded-xl bg-space-900/50 border border-space-800">
+                    <div className="p-2 bg-neon-cyan/10 rounded-lg"><Cpu className="text-neon-cyan" size={20} /></div>
+                    <div>
+                        <h4 className="font-bold text-sm text-white">Cryptographic Identity</h4>
+                        <p className="text-xs text-slate-500">Unique hash generation</p>
+                    </div>
+                 </div>
+                 <div className="flex items-center gap-4 p-4 rounded-xl bg-space-900/50 border border-space-800">
+                    <div className="p-2 bg-neon-purple/10 rounded-lg"><Database className="text-neon-purple" size={20} /></div>
+                    <div>
+                        <h4 className="font-bold text-sm text-white">Zero-Knowledge Vault</h4>
+                        <p className="text-xs text-slate-500">Client-side encryption</p>
+                    </div>
+                 </div>
+             </div>
         </div>
       </div>
 
-      {/* RIGHT: UI */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 sm:p-12 relative z-10 overflow-y-auto">
-        <div className="w-full max-w-md space-y-6 py-8">
-          <div className="text-center lg:text-left">
-            <h1 className="text-3xl font-bold text-white tracking-tight">New Operative</h1>
-            <p className="text-slate-400 text-sm mt-2">Establish your cryptographic identity.</p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4 mt-6">
-            <div className="space-y-1">
-               <label className="text-xs font-medium text-neon-cyan uppercase tracking-wider ml-1">Full Name</label>
-               <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-slate-500" />
-                  </div>
-                  <input
-                    type="text" required
-                    className="w-full bg-navy-800 border border-slate-700 text-white text-sm rounded-xl block w-full pl-12 p-3 focus:ring-2 focus:ring-cyber focus:border-cyber transition-all placeholder:text-slate-600"
-                    placeholder="John Doe"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  />
-               </div>
+      {/* RIGHT: REGISTER FORM */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 overflow-y-auto h-screen relative z-20">
+         <div className="w-full max-w-md py-8">
+            
+            <div className="text-center lg:text-left mb-8">
+               <h1 className="text-2xl font-bold text-white">New Operative Registration</h1>
+               <p className="text-sm text-slate-500 mt-1">All fields are required for clearance.</p>
             </div>
 
-            <div className="space-y-1">
-               <label className="text-xs font-medium text-neon-cyan uppercase tracking-wider ml-1">Email Identity</label>
-               <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-slate-500" />
-                  </div>
-                  <input
-                    type="email" required
-                    className="w-full bg-navy-800 border border-slate-700 text-white text-sm rounded-xl block w-full pl-12 p-3 focus:ring-2 focus:ring-cyber focus:border-cyber transition-all placeholder:text-slate-600"
-                    placeholder="agent@secure.com"
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  />
-               </div>
-            </div>
-
-            <div className="space-y-1">
-               <label className="text-xs font-medium text-neon-cyan uppercase tracking-wider ml-1">Security Key</label>
-               <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-slate-500" />
-                  </div>
-                  <input
-                    type={showPassword ? "text" : "password"} required
-                    className="w-full bg-navy-800 border border-slate-700 text-white text-sm rounded-xl block w-full pl-12 p-3 pr-12 focus:ring-2 focus:ring-cyber focus:border-cyber transition-all placeholder:text-slate-600"
-                    placeholder="Strong Password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
-                  />
-               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
                <div className="space-y-1">
-                  <label className="text-xs font-medium text-neon-cyan uppercase tracking-wider ml-1">6-Digit PIN</label>
+                  <label className="text-[10px] text-neon-cyan uppercase tracking-wider font-bold ml-1">Full Name</label>
                   <div className="relative">
-                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                       <Shield className="h-5 w-5 text-slate-500" />
-                     </div>
-                     <input
-                       type="text" maxLength={6} required inputMode="numeric"
-                       className="w-full bg-navy-800 border border-slate-700 text-white text-sm rounded-xl block w-full pl-12 p-3 focus:ring-2 focus:ring-cyber focus:border-cyber transition-all placeholder:text-slate-600"
-                       placeholder="######"
-                       value={formData.pin}
-                       onChange={(e) => setFormData({...formData, pin: e.target.value})}
+                     <User className="absolute left-4 top-3.5 text-slate-500" size={18} />
+                     <input type="text" required className="w-full bg-space-900 border border-space-800 rounded-xl p-3.5 pl-12 text-sm text-white focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan focus:outline-none transition-all placeholder:text-slate-700" 
+                        placeholder="John Doe" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
                      />
                   </div>
                </div>
+
                <div className="space-y-1">
-                  <label className="text-xs font-medium text-neon-cyan uppercase tracking-wider ml-1">Confirm PIN</label>
+                  <label className="text-[10px] text-neon-cyan uppercase tracking-wider font-bold ml-1">Email</label>
                   <div className="relative">
-                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                       <Shield className="h-5 w-5 text-slate-500" />
-                     </div>
-                     <input
-                       type="text" maxLength={6} required inputMode="numeric"
-                       className="w-full bg-navy-800 border border-slate-700 text-white text-sm rounded-xl block w-full pl-12 p-3 focus:ring-2 focus:ring-cyber focus:border-cyber transition-all placeholder:text-slate-600"
-                       placeholder="######"
-                       value={formData.confirmPin}
-                       onChange={(e) => setFormData({...formData, confirmPin: e.target.value})}
+                     <Mail className="absolute left-4 top-3.5 text-slate-500" size={18} />
+                     <input type="email" required className="w-full bg-space-900 border border-space-800 rounded-xl p-3.5 pl-12 text-sm text-white focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan focus:outline-none transition-all placeholder:text-slate-700" 
+                        placeholder="agent@secure.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})}
                      />
                   </div>
                </div>
+
+               <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                     <label className="text-[10px] text-neon-cyan uppercase tracking-wider font-bold ml-1">Password</label>
+                     <div className="relative">
+                        <Lock className="absolute left-4 top-3.5 text-slate-500" size={18} />
+                        <input type="password" required className="w-full bg-space-900 border border-space-800 rounded-xl p-3.5 pl-12 text-sm text-white focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan focus:outline-none transition-all" 
+                           value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})}
+                        />
+                     </div>
+                  </div>
+                  <div className="space-y-1">
+                     <label className="text-[10px] text-neon-cyan uppercase tracking-wider font-bold ml-1">6-Digit PIN</label>
+                     <div className="relative">
+                        <Shield className="absolute left-4 top-3.5 text-slate-500" size={18} />
+                        <input type="text" inputMode="numeric" maxLength={6} required className="w-full bg-space-900 border border-space-800 rounded-xl p-3.5 pl-12 text-sm text-white focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan focus:outline-none transition-all" 
+                           value={formData.pin} onChange={e => setFormData({...formData, pin: e.target.value})}
+                        />
+                     </div>
+                  </div>
+               </div>
+
+               {error && (
+                 <div className="flex items-center gap-2 p-3 rounded-lg bg-neon-red/10 border border-neon-red/30 text-neon-red text-sm">
+                    <AlertTriangle size={16} /> {error}
+                 </div>
+               )}
+
+               <button 
+                 type="submit"
+                 disabled={loading}
+                 className="w-full mt-6 bg-gradient-to-r from-cyber to-neon-cyan hover:to-neon-cyan text-white font-bold py-4 rounded-xl shadow-lg shadow-cyber/20 transition-all duration-300 uppercase tracking-widest text-xs"
+               >
+                 {loading ? 'PROCESSING...' : 'FORGE IDENTITY KEY'}
+               </button>
+            </form>
+
+            <div className="mt-8 text-center">
+               <Link to="/login" className="text-slate-400 text-xs hover:text-white inline-flex items-center gap-2 transition-colors">
+                 <ArrowLeft size={12} /> Return to Access Point
+               </Link>
             </div>
 
-            {error && <div className="text-red-400 text-sm text-center bg-red-500/10 p-2 rounded-lg border border-red-500/20">{error}</div>}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-cyber to-neon-cyan hover:to-neon-cyan text-white font-bold py-4 rounded-xl shadow-lg shadow-cyber/30 transition-all duration-300 mt-4"
-            >
-              {loading ? 'INITIALIZING...' : 'ESTABLISH IDENTITY'}
-            </button>
-          </form>
-
-          <div className="text-center mt-6">
-             <Link to="/login" className="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-neon-cyan transition-colors">
-               <ArrowLeft size={14} /> Return to Access Point
-             </Link>
-          </div>
-        </div>
+         </div>
       </div>
     </div>
   );
