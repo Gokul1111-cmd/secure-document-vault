@@ -5,6 +5,8 @@ import { useToast } from '../components/ui/ToastContainer.jsx';
 import { Shield, Mail, Lock, User, Eye, EyeOff, Check, ArrowLeft } from 'lucide-react';
 import Button from '../components/ui/Button.jsx';
 import Input from '../components/ui/Input.jsx';
+import Card from '../components/ui/Card.jsx';
+import Secure3DScene from '../components/three/Secure3DScene.jsx'; // Import 3D Scene
 
 function Register() {
   const { register } = useAuth();
@@ -59,32 +61,32 @@ function Register() {
 
   return (
     <div className="min-h-screen flex bg-white dark:bg-slate-900 transition-colors">
-      {/* Left Panel - Branding (Hidden on mobile) */}
+      {/* Left Panel - 3D Animation (Hidden on mobile) */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-slate-900 items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-tr from-slate-900 to-blue-900/40 z-0" />
-        {/* Decorative Circles */}
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl" />
         
-        <div className="relative z-10 p-12 text-center max-w-lg">
+        {/* 3D Scene */}
+        <Secure3DScene />
+        
+        {/* Overlay Content */}
+        <div className="relative z-10 p-12 text-center max-w-lg backdrop-blur-sm bg-slate-900/20 rounded-3xl border border-white/5 shadow-2xl">
            <div className="mb-8 flex justify-center">
-              <div className="p-4 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-xl shadow-blue-900/50">
+              <div className="p-4 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-xl shadow-blue-900/50 border border-white/10">
                  <Shield className="h-12 w-12 text-white" />
               </div>
            </div>
           <h2 className="text-3xl font-bold text-white mb-4">
-            Join Secure Vault
+            Create Your Vault
           </h2>
-          <ul className="text-left space-y-4 text-slate-300 mx-auto max-w-xs">
-             <li className="flex items-center gap-3">
+          <ul className="text-left space-y-4 text-slate-200 mx-auto max-w-xs font-medium">
+             <li className="flex items-center gap-3 bg-white/5 p-2 rounded-lg border border-white/5">
                 <div className="h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center"><Lock size={16} /></div>
                 <span>End-to-End Encryption</span>
              </li>
-             <li className="flex items-center gap-3">
+             <li className="flex items-center gap-3 bg-white/5 p-2 rounded-lg border border-white/5">
                 <div className="h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center"><Shield size={16} /></div>
                 <span>PIN Protected Access</span>
              </li>
-             <li className="flex items-center gap-3">
+             <li className="flex items-center gap-3 bg-white/5 p-2 rounded-lg border border-white/5">
                 <div className="h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center"><User size={16} /></div>
                 <span>Secure Account Recovery</span>
              </li>

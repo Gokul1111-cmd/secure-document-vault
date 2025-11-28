@@ -5,6 +5,7 @@ import { useToast } from '../components/ui/ToastContainer.jsx';
 import { Shield, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import Button from '../components/ui/Button.jsx';
 import Input from '../components/ui/Input.jsx';
+import Secure3DScene from '../components/three/Secure3DScene.jsx'; // Import the 3D scene
 
 function Login() {
   const navigate = useNavigate();
@@ -39,21 +40,22 @@ function Login() {
 
   return (
     <div className="min-h-screen flex bg-white dark:bg-slate-900 transition-colors">
-      {/* Left Panel - Branding (Hidden on mobile) */}
+      {/* Left Panel - 3D Animation (Hidden on mobile) */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-slate-900 items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-slate-900 z-0" />
-        <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl" />
-        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl" />
         
-        <div className="relative z-10 p-12 text-center max-w-lg">
-          <div className="inline-flex p-4 bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 mb-8 shadow-2xl">
+        {/* 3D Background */}
+        <Secure3DScene />
+        
+        {/* Content Overlay */}
+        <div className="relative z-10 p-12 text-center max-w-lg backdrop-blur-sm bg-slate-900/30 rounded-3xl border border-white/5 shadow-2xl">
+          <div className="inline-flex p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 mb-8 shadow-xl">
              <Shield className="h-16 w-16 text-blue-400" />
           </div>
           <h2 className="text-4xl font-bold text-white mb-6 leading-tight">
-            Bank-Grade Security for Your Documents
+            Secure Document Vault
           </h2>
-          <p className="text-lg text-slate-300 leading-relaxed">
-            Access your encrypted vault with confidence. Our double-layer security ensures your sensitive data stays private.
+          <p className="text-lg text-slate-200 leading-relaxed">
+            Bank-grade encryption meets modern design. Access your private documents with our double-layer security protection.
           </p>
         </div>
       </div>
