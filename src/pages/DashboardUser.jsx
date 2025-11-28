@@ -276,7 +276,7 @@ function DashboardUser() {
                          <FileText className="h-5 w-5 text-blue-600" />
                          <span className="font-medium text-slate-900 dark:text-white truncate max-w-[150px]">{doc.fileName}</span>
                       </div>
-                      <span className="text-xs text-slate-500">{formatFileSize(doc.fileSize)}</span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">{formatFileSize(doc.fileSize)}</span>
                    </div>
                    <div className="flex justify-end gap-2 mt-3">
                       <Button size="sm" variant="outline" onClick={() => handleView(doc)}><Eye size={16}/></Button>
@@ -330,7 +330,15 @@ function DashboardUser() {
       <Modal isOpen={showPinModal} onClose={() => setShowPinModal(false)} title="Security Check" size="sm">
          <div className="space-y-4">
             <p className="text-sm text-slate-600 dark:text-slate-400">Enter your 6-digit PIN to access this file.</p>
-            <Input type="password" value={pin} onChange={e => setPin(e.target.value)} placeholder="######" className="text-center text-lg tracking-widest" maxLength={6} />
+            <Input 
+               type="password" 
+               inputMode="numeric" // ADDED THIS LINE
+               value={pin} 
+               onChange={e => setPin(e.target.value)} 
+               placeholder="######" 
+               className="text-center text-lg tracking-widest" 
+               maxLength={6} 
+            />
             {pinError && <p className="text-red-500 text-sm text-center">{pinError}</p>}
             <div className="flex gap-2">
                <Button className="flex-1" onClick={handlePinSubmit} loading={actionLoading}>Confirm</Button>
