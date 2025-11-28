@@ -2,17 +2,14 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../components/ui/ToastContainer.jsx';
-import { Mail, Lock, Eye, EyeOff, Sun, Moon } from 'lucide-react';
+import { Shield, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import Button from '../components/ui/Button.jsx';
 import Input from '../components/ui/Input.jsx';
-import Card from '../components/ui/Card.jsx';
-import { useTheme } from '../context/ThemeContext.jsx';
 
 function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const { showToast } = useToast();
-  const { theme, toggleTheme } = useTheme();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -41,27 +38,39 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950 transition-colors">
-      <div className="w-full max-w-md">
-        <div className="flex justify-end mb-4">
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="inline-flex items-center justify-center rounded-full p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800 transition-colors"
-            aria-label="Toggle theme"
-          >
-            {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-          </button>
-        </div>
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center p-3 bg-slate-900/80 dark:bg-slate-100/10 rounded-2xl mb-4 shadow-lg">
-            <img src="/secure-logo.svg" alt="Secure Document Vault logo" className="h-16 w-16" loading="lazy" />
+    <div className="min-h-screen flex bg-white dark:bg-slate-900 transition-colors">
+      {/* Left Panel - Branding (Hidden on mobile) */}
+      <div className="hidden lg:flex lg:w-1/2 relative bg-slate-900 items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-slate-900 z-0" />
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl" />
+        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl" />
+        
+        <div className="relative z-10 p-12 text-center max-w-lg">
+          <div className="inline-flex p-4 bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 mb-8 shadow-2xl">
+             <Shield className="h-16 w-16 text-blue-400" />
           </div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Welcome Back</h1>
-          <p className="text-slate-600 dark:text-slate-400">Sign in to access your secure vault</p>
+          <h2 className="text-4xl font-bold text-white mb-6 leading-tight">
+            Bank-Grade Security for Your Documents
+          </h2>
+          <p className="text-lg text-slate-300 leading-relaxed">
+            Access your encrypted vault with confidence. Our double-layer security ensures your sensitive data stays private.
+          </p>
         </div>
+      </div>
 
-        <Card>
+      {/* Right Panel - Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 lg:p-24">
+        <div className="w-full max-w-md space-y-8">
+          <div className="text-center lg:text-left">
+            <div className="inline-flex lg:hidden p-3 bg-blue-50 dark:bg-blue-900/30 rounded-xl mb-4">
+              <Shield className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+            </div>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Welcome Back</h1>
+            <p className="mt-2 text-slate-600 dark:text-slate-400">
+              Please enter your credentials to access your vault.
+            </p>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <Input
               type="email"
@@ -70,7 +79,8 @@ function Login() {
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               icon={<Mail size={18} />}
               required
-              placeholder="goku@gmail.com"
+              placeholder="name@company.com"
+              autoComplete="email"
             />
 
             <div className="relative">
@@ -81,11 +91,12 @@ function Login() {
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 icon={<Lock size={18} />}
                 required
-                placeholder="Enter your password"
+                placeholder="••••••••"
+                autoComplete="current-password"
               />
               <button
                 type="button"
-                className="absolute right-4 top-9 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
+                className="absolute right-4 top-9 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -93,14 +104,14 @@ function Login() {
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 dark:bg-red-500/10 dark:border-red-500/30 dark:text-red-200 px-4 py-3 rounded-lg">
-                {error}
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg text-sm flex items-center">
+                <span className="mr-2">⚠️</span> {error}
               </div>
             )}
 
             <Button
               type="submit"
-              className="w-full"
+              className="w-full py-3 shadow-lg hover:shadow-xl transition-all duration-200"
               loading={loading}
               size="lg"
             >
@@ -108,15 +119,24 @@ function Login() {
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200 dark:border-slate-700" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="bg-white dark:bg-slate-900 px-2 text-slate-500">New to the platform?</span>
+            </div>
+          </div>
+
+          <div className="text-center">
             <Link
               to="/register"
-              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+              className="inline-flex items-center font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
             >
-              Don't have an account? Sign up
+              Create an account <ArrowRight size={16} className="ml-1" />
             </Link>
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   );
