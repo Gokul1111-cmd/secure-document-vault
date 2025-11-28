@@ -15,6 +15,7 @@ router.post('/users/:userId/unlock', adminController.unlockUser);
 router.post('/users/:userId/reset-password', adminController.requestPasswordReset);
 router.get('/logs', adminController.getAuditLogs);
 router.get('/documents', adminController.getAllDocuments);
+// Added delete route
 router.delete('/users/:userId', adminController.deleteUser);
 
 module.exports = router;
