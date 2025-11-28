@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../components/ui/ToastContainer.jsx';
 import { adminAPI } from '../services/api.js';
-import { Users, Search, Lock, Unlock, Mail, Calendar, Shield, AlertTriangle } from 'lucide-react';
+import { Users, Search, Lock, Unlock, Mail, Shield, AlertTriangle, Trash2 } from 'lucide-react';
 import Card from '../components/ui/Card.jsx';
 import Table from '../components/ui/Table.jsx';
 import Button from '../components/ui/Button.jsx';
 import Input from '../components/ui/Input.jsx';
 import LoadingSpinner from '../components/ui/LoadingSpinner.jsx';
+import ConfirmDialog from '../components/ui/ConfirmDialog.jsx';
 
 function UserManagement() {
   const { user } = useAuth();
@@ -18,6 +19,8 @@ function UserManagement() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -74,13 +77,23 @@ function UserManagement() {
     }
   };
 
-  const handleResetPassword = async (userId) => {
+  const handleDeleteClick = (user) => {
+    setUserToDelete(user);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+
     try {
-      const response = await adminAPI.resetPassword(userId);
-      showToast('Password reset link generated', 'success');
-      console.log('Reset link:', response.data.data.resetLink);
+      await adminAPI.deleteUser(userToDelete.id);
+      showToast('User deleted successfully', 'success');
+      fetchUsers();
     } catch (error) {
-      showToast(error.response?.data?.message || 'Failed to reset password', 'error');
+      showToast(error.response?.data?.message || 'Failed to delete user', 'error');
+    } finally {
+      setShowDeleteConfirm(false);
+      setUserToDelete(null);
     }
   };
 
@@ -264,6 +277,7 @@ function UserManagement() {
                               size="sm"
                               onClick={() => handleUnlockUser(u.id)}
                               disabled={u.role === 'ADMIN'}
+                              title="Unlock User"
                             >
                               <Unlock size={14} />
                             </Button>
@@ -273,10 +287,21 @@ function UserManagement() {
                               size="sm"
                               onClick={() => handleLockUser(u.id)}
                               disabled={u.role === 'ADMIN'}
+                              title="Lock User"
                             >
                               <Lock size={14} />
                             </Button>
                           )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteClick(u)}
+                            disabled={u.role === 'ADMIN'}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                            title="Delete User"
+                          >
+                            <Trash2 size={14} />
+                          </Button>
                         </div>
                       </Table.Cell>
                     </Table.Row>
@@ -292,6 +317,16 @@ function UserManagement() {
               )}
             </Card.Content>
           </Card>
+
+          <ConfirmDialog
+            isOpen={showDeleteConfirm}
+            onClose={() => setShowDeleteConfirm(false)}
+            onConfirm={confirmDeleteUser}
+            title="Delete User Account"
+            message={`Are you sure you want to permanently delete ${userToDelete?.name}? This will delete all their documents and cannot be undone.`}
+            confirmText="Delete User"
+            danger
+          />
         </>
       )}
     </div>
