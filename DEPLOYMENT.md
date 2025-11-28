@@ -283,7 +283,7 @@ vercel --prod
    - `NODE_ENV=production`
    - `PORT` is provided automatically by Render
    - `DATABASE_URL`
-   - `CLIENT_ORIGIN=https://your-frontend-domain.vercel.app,https://your-preview.vercel.app`
+   - `CLIENT_ORIGIN=https://your-frontend-domain.vercel.app,https://*.vercel.app` (wildcards supported)
    - `JWT_ACCESS_SECRET`
    - `JWT_REFRESH_SECRET`
    - `JWT_ACCESS_EXPIRES_IN` (optional override)
@@ -295,7 +295,7 @@ vercel --prod
    - `RSA_PRIVATE_KEY` and `RSA_PUBLIC_KEY` (copy PEM contents with `\n` escapes)
    - `RATE_LIMIT_MAX`, `RATE_LIMIT_WINDOW` as needed
 
-   The backend accepts a comma-separated list in `CLIENT_ORIGIN`, so include every Vercel domain (production + previews). Render also injects `RENDER_EXTERNAL_URL`; you may add it to `CLIENT_ORIGIN` if the API needs to call itself via HTTPS links.
+   The backend accepts comma-separated entries in `CLIENT_ORIGIN`, including wildcards (`https://*.vercel.app`). List your primary domain first (for email links) and add a wildcard to cover preview deployments. Render also injects `RENDER_EXTERNAL_URL`; you may add it to `CLIENT_ORIGIN` if the API needs to call itself via HTTPS links.
 
 5. **Database schema**: after provisioning secrets, run migrations using Render’s shell or a one-off job:
    ```bash
