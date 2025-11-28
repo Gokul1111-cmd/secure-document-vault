@@ -7,6 +7,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts';
 import Card from '../components/ui/Card.jsx';
+import Table from '../components/ui/Table.jsx';
 import Button from '../components/ui/Button.jsx';
 import Input from '../components/ui/Input.jsx';
 import LoadingSpinner from '../components/ui/LoadingSpinner.jsx';
@@ -29,7 +30,8 @@ const formatBytes = (bytes = 0) => {
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
   const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
   const value = bytes / Math.pow(1024, index);
-  return `${value.toFixed(1)} ${units[index]}`;
+  const precision = value >= 10 || index === 0 ? 0 : 1;
+  return `${value.toFixed(precision)} ${units[index]}`;
 };
 
 const getStatusBadge = (status) => {
@@ -85,7 +87,7 @@ function DashboardAdmin() {
       const [statsRes, logsRes, docsRes] = await Promise.all([
         adminAPI.getStats(),
         adminAPI.getLogs({ limit: 12 }),
-        adminAPI.getAllDocuments({ limit: 1 }), // Just need summary stats
+        adminAPI.getAllDocuments({ limit: 1 }), 
       ]);
 
       if (!isMountedRef.current) return;
@@ -168,25 +170,25 @@ function DashboardAdmin() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
              <Card padding="sm" className="border-l-4 border-l-blue-500">
                <div className="flex justify-between items-center">
-                 <div><p className="text-sm text-slate-500 dark:text-slate-400">Total Users</p><p className="text-2xl font-bold dark:text-white">{stats.totalUsers}</p></div>
+                 <div><p className="text-sm text-slate-500 dark:text-slate-400">Total Users</p><p className="text-2xl font-bold dark:text-white">{formatNumber(stats.totalUsers)}</p></div>
                  <Users className="text-blue-500 h-8 w-8 opacity-20" />
                </div>
              </Card>
              <Card padding="sm" className="border-l-4 border-l-purple-500">
                <div className="flex justify-between items-center">
-                 <div><p className="text-sm text-slate-500 dark:text-slate-400">Total Documents</p><p className="text-2xl font-bold dark:text-white">{stats.totalDocuments}</p></div>
+                 <div><p className="text-sm text-slate-500 dark:text-slate-400">Total Documents</p><p className="text-2xl font-bold dark:text-white">{formatNumber(stats.totalDocuments)}</p></div>
                  <FileText className="text-purple-500 h-8 w-8 opacity-20" />
                </div>
              </Card>
              <Card padding="sm" className="border-l-4 border-l-emerald-500">
                <div className="flex justify-between items-center">
-                 <div><p className="text-sm text-slate-500 dark:text-slate-400">Active Users</p><p className="text-2xl font-bold dark:text-white">{stats.activeUsers}</p></div>
+                 <div><p className="text-sm text-slate-500 dark:text-slate-400">Active Users</p><p className="text-2xl font-bold dark:text-white">{formatNumber(stats.activeUsers)}</p></div>
                  <CheckCircle className="text-emerald-500 h-8 w-8 opacity-20" />
                </div>
              </Card>
              <Card padding="sm" className="border-l-4 border-l-red-500">
                <div className="flex justify-between items-center">
-                 <div><p className="text-sm text-slate-500 dark:text-slate-400">Locked Accounts</p><p className="text-2xl font-bold dark:text-white">{stats.lockedUsers}</p></div>
+                 <div><p className="text-sm text-slate-500 dark:text-slate-400">Locked Accounts</p><p className="text-2xl font-bold dark:text-white">{formatNumber(stats.lockedUsers)}</p></div>
                  <Shield className="text-red-500 h-8 w-8 opacity-20" />
                </div>
              </Card>
@@ -246,7 +248,6 @@ function DashboardAdmin() {
           </div>
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-3 xl:gap-8">
-             {/* Recent Activity Table */}
             <Card className="xl:col-span-2">
               <Card.Header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
@@ -304,7 +305,6 @@ function DashboardAdmin() {
               </Card.Content>
             </Card>
 
-            {/* Sidebar Stats & Actions */}
             <div className="space-y-6">
               <Card padding="sm">
                 <Card.Header className="mb-2">

@@ -276,7 +276,7 @@ function DashboardUser() {
                          <FileText className="h-5 w-5 text-blue-600" />
                          <span className="font-medium text-slate-900 dark:text-white truncate max-w-[150px]">{doc.fileName}</span>
                       </div>
-                      <span className="text-xs text-slate-500 dark:text-slate-400">{formatFileSize(doc.fileSize)}</span>
+                      <span className="text-xs text-slate-500">{formatFileSize(doc.fileSize)}</span>
                    </div>
                    <div className="flex justify-end gap-2 mt-3">
                       <Button size="sm" variant="outline" onClick={() => handleView(doc)}><Eye size={16}/></Button>
