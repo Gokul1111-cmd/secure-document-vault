@@ -18,3 +18,12 @@
     animation: slide-in 0.3s ease-out;
   }
 }
+
+/* Smooth theme transition */
+html {
+  transition: background-color 0.2s, color 0.2s;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100;
+}

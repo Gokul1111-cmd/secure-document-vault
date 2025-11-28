@@ -102,17 +102,48 @@ const uploadDocument = async (req, res, next) => {
 const getDocuments = async (req, res, next) => {
   try {
     const userId = req.user.userId;
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const take = parseInt(limit);
+
     const prisma = getPrismaClient();
-    const documents = await prisma.document.findMany({
-      where: { ownerUserId: userId },
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true, fileName: true, fileSize: true, mimeType: true,
-        downloadCount: true, lastEditedAt: true, lastDownloadAt: true,
-        sharedStatus: true, createdAt: true,
-      },
+    
+    // Fetch documents AND aggregate stats in parallel
+    const [documents, total, aggregations] = await Promise.all([
+        prisma.document.findMany({
+            where: { ownerUserId: userId },
+            orderBy: { createdAt: 'desc' },
+            skip,
+            take,
+            select: {
+              id: true, fileName: true, fileSize: true, mimeType: true,
+              downloadCount: true, lastEditedAt: true, lastDownloadAt: true,
+              sharedStatus: true, createdAt: true,
+            },
+        }),
+        prisma.document.count({ where: { ownerUserId: userId } }),
+        prisma.document.aggregate({
+            where: { ownerUserId: userId },
+            _sum: { fileSize: true, downloadCount: true }
+        })
+    ]);
+
+    res.json({
+      status: 'success',
+      data: {
+          documents,
+          stats: {
+             totalFiles: total,
+             totalSize: aggregations._sum.fileSize || 0,
+             totalDownloads: aggregations._sum.downloadCount || 0
+          },
+          pagination: {
+              total,
+              page: parseInt(page),
+              pages: Math.ceil(total / take)
+          }
+      }
     });
-    res.json({ status: 'success', data: documents });
   } catch (error) {
     next(error);
   }
@@ -182,8 +213,6 @@ const streamDocument = async (req, res, disposition, next) => {
       // If headers sent, stream will just cut off, simpler to let client handle
     });
 
-    // Update stats only on success finish? 
-    // Ideally yes, but for streaming we usually update on start or assume success
     if (disposition === 'attachment') {
       await prisma.document.update({
         where: { id },

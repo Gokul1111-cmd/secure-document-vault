@@ -1,5 +1,5 @@
 function Card({ children, className = '', padding = 'default', hover = false }) {
-  const baseClasses = 'bg-white rounded-xl border border-slate-200 shadow-sm';
+  const baseClasses = 'bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm transition-colors';
   const hoverClasses = hover ? 'hover:shadow-md transition-shadow duration-200' : '';
   
   const paddings = {
@@ -26,7 +26,7 @@ function CardHeader({ children, className = '' }) {
 
 function CardTitle({ children, className = '' }) {
   return (
-    <h3 className={`text-base font-semibold text-slate-900 sm:text-lg ${className}`}>
+    <h3 className={`text-base font-semibold text-slate-900 dark:text-white sm:text-lg ${className}`}>
       {children}
     </h3>
   );
