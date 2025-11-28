@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../components/ui/ToastContainer.jsx';
-import { Shield, Mail, Lock, Eye, EyeOff, Sun, Moon } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Sun, Moon } from 'lucide-react';
 import Button from '../components/ui/Button.jsx';
 import Input from '../components/ui/Input.jsx';
 import Card from '../components/ui/Card.jsx';
@@ -54,8 +54,8 @@ function Login() {
           </button>
         </div>
         <div className="text-center mb-8">
-          <div className="inline-flex p-3 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl mb-4">
-            <Shield className="h-8 w-8 text-white" />
+          <div className="inline-flex items-center justify-center p-3 bg-slate-900/80 dark:bg-slate-100/10 rounded-2xl mb-4 shadow-lg">
+            <img src="/secure-logo.svg" alt="Secure Document Vault logo" className="h-16 w-16" loading="lazy" />
           </div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Welcome Back</h1>
           <p className="text-slate-600 dark:text-slate-400">Sign in to access your secure vault</p>

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useTheme } from '../../context/ThemeContext.jsx';
-import { Shield, LogOut, ChevronDown, Settings, Menu, Sun, Moon } from 'lucide-react';
+import { LogOut, ChevronDown, Settings, Menu, Sun, Moon } from 'lucide-react';
 
 function Navbar({ onToggleSidebar = () => {} }) {
   const { user, logout } = useAuth();
@@ -27,10 +27,16 @@ function Navbar({ onToggleSidebar = () => {} }) {
             >
               <Menu className="h-5 w-5" />
             </button>
-            <div className="p-1.5 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg">
-              <Shield className="h-5 w-5 text-white" />
+            <img
+              src="/secure-logo.svg"
+              alt="Secure Document Vault logo"
+              className="h-10 w-10 drop-shadow-md"
+              loading="lazy"
+            />
+            <div>
+              <h1 className="text-sm font-semibold text-slate-900 dark:text-white sm:text-base">Secure Document Vault</h1>
+              <p className="text-[11px] uppercase tracking-[0.25em] text-slate-500 dark:text-slate-400 hidden sm:block">Trusted Storage</p>
             </div>
-            <h1 className="text-sm font-semibold text-slate-900 dark:text-white sm:text-base">Secure Document Vault</h1>
           </div>
 
           <div className="flex items-center gap-4">

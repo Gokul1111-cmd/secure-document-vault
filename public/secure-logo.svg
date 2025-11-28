@@ -1,0 +1,45 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Secure Document Vault logo">
+  <defs>
+    <linearGradient id="outerRing" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2d6da7" />
+      <stop offset="100%" stop-color="#6fb3df" />
+    </linearGradient>
+    <radialGradient id="innerGlow" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#0f2b3f" />
+      <stop offset="70%" stop-color="#071724" />
+      <stop offset="100%" stop-color="#020810" />
+    </radialGradient>
+    <linearGradient id="dial" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8ed0ff" />
+      <stop offset="100%" stop-color="#c7edff" />
+    </linearGradient>
+    <path id="arcTop" d="M90 256a166 166 0 0 1 332 0" fill="none" />
+    <path id="arcBottom" d="M422 256a166 166 0 0 1 -332 0" fill="none" />
+  </defs>
+  <rect width="512" height="512" fill="#031320" />
+  <circle cx="256" cy="256" r="210" fill="url(#innerGlow)" stroke="url(#outerRing)" stroke-width="18" />
+  <circle cx="256" cy="256" r="150" fill="none" stroke="#58a4d8" stroke-width="8" opacity="0.6" />
+  <circle cx="256" cy="256" r="110" fill="#031625" stroke="#8ed0ff" stroke-width="6" />
+  <circle cx="256" cy="256" r="70" fill="#06253b" stroke="#9fd8ff" stroke-width="6" />
+  <circle cx="256" cy="256" r="42" fill="url(#dial)" stroke="#0c2c44" stroke-width="6" />
+  <circle cx="256" cy="256" r="20" fill="#031320" stroke="#9fd8ff" stroke-width="4" />
+  <g fill="#bfe7ff">
+    <rect x="246" y="182" width="20" height="12" rx="3" />
+    <rect x="246" y="318" width="20" height="12" rx="3" />
+    <rect x="182" y="250" width="12" height="20" rx="3" />
+    <rect x="318" y="250" width="12" height="20" rx="3" />
+  </g>
+  <g stroke="#9fd8ff" stroke-width="6" stroke-linecap="round">
+    <line x1="256" y1="206" x2="256" y2="230" />
+    <line x1="256" y1="282" x2="256" y2="306" />
+    <line x1="206" y1="256" x2="230" y2="256" />
+    <line x1="282" y1="256" x2="306" y2="256" />
+  </g>
+  <circle cx="256" cy="256" r="134" fill="none" stroke="#1b4f73" stroke-width="2" stroke-dasharray="12 18" opacity="0.6" />
+  <text font-size="40" font-family="'Poppins', 'Segoe UI', sans-serif" fill="#d7ecff" letter-spacing="8" font-weight="600">
+    <textPath href="#arcTop" startOffset="50%" text-anchor="middle">SECURE</textPath>
+  </text>
+  <text font-size="32" font-family="'Poppins', 'Segoe UI', sans-serif" fill="#95c8f0" letter-spacing="6" font-weight="500">
+    <textPath href="#arcBottom" startOffset="50%" text-anchor="middle">DOCUMENT VAULT</textPath>
+  </text>
+</svg>
