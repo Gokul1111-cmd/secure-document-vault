@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../components/ui/ToastContainer.jsx';
-import { Shield, Mail, Lock, Eye, EyeOff, ArrowRight, ChevronRight, AlertTriangle, Fingerprint } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Disc, Globe } from 'lucide-react'; // Icons
 import Secure3DScene from '../components/three/Secure3DScene.jsx';
 
 function Login() {
@@ -13,144 +13,159 @@ function Login() {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   
-  // Interaction State for 3D Scene
+  // Interaction States
   const [focusState, setFocusState] = useState('none');
-  const [loginStatus, setLoginStatus] = useState('idle'); // idle, loading, success, error
-  const [consoleMsg, setConsoleMsg] = useState('AWAITING AUTHORIZATION');
+  const [loginStatus, setLoginStatus] = useState('idle'); // idle, success, error
+  const [uiMessage, setUiMessage] = useState('Awaiting Authorization...');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoginStatus('loading');
-    setConsoleMsg('VERIFYING HASH...');
-
+    setUiMessage('Verifying Star-Key...');
+    
     try {
       const result = await login(formData.email, formData.password);
       if (result.success) {
         setLoginStatus('success');
-        setConsoleMsg('ACCESS GRANTED. DECRYPTING...');
+        setUiMessage('Constellation Aligned. Access Granted.');
+        
+        // Wait for animation
         setTimeout(() => {
-            showToast('Vault Unlocked.', 'success');
+            showToast('Welcome to the Observatory.', 'success');
             navigate('/dashboard');
-        }, 2500); // Wait for 3D unlock animation
+        }, 2000);
       } else {
         setLoginStatus('error');
-        setConsoleMsg('ACCESS DENIED. THREAT LOGGED.');
+        setUiMessage('Authorization Denied. Threat Logged.');
         showToast('Invalid Credentials', 'error');
         setTimeout(() => {
             setLoginStatus('idle');
-            setConsoleMsg('AWAITING AUTHORIZATION');
-        }, 2000);
+            setUiMessage('Awaiting Authorization...');
+        }, 1500);
       }
     } catch (err) {
       setLoginStatus('error');
-      setConsoleMsg('NETWORK FAILURE');
-      setTimeout(() => setLoginStatus('idle'), 2000);
+      setUiMessage('Connection Lost.');
     }
   };
 
   return (
-    <div className="min-h-screen flex bg-space-950 text-white font-sans selection:bg-neon-cyan selection:text-black overflow-hidden">
+    <div className="min-h-screen flex bg-space-900 text-white font-sans selection:bg-neon-cyan selection:text-black overflow-hidden">
       
-      {/* LEFT PANEL: 3D SCENE */}
+      {/* LEFT: 3D SCENE */}
       <div className="hidden lg:block lg:w-1/2 relative h-screen">
-        <Secure3DScene focusState={focusState} loginStatus={loginStatus} />
+        <Secure3DScene 
+            focusState={focusState} 
+            loginStatus={loginStatus} 
+            emailInput={formData.email} 
+        />
         
-        {/* Cinematic Vignette */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_#02040a_120%)] opacity-80 pointer-events-none" />
+        {/* Overlay Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent to-space-900 z-10" />
         
-        {/* Console HUD */}
-        <div className="absolute bottom-10 left-10 font-mono text-[10px] text-neon-cyan/70 tracking-widest border-l-2 border-neon-cyan pl-4 space-y-1">
-          <p>STATUS: <span className={loginStatus === 'error' ? 'text-neon-red' : 'text-white'}>{consoleMsg}</span></p>
-          <p>SECURE_LINK: <span className="text-neon-green">ACTIVE</span></p>
-          <p>VAULT_ID: OMEGA-7</p>
-          <p className="opacity-50">ENCRYPTION: AES-256-GCM</p>
+        {/* Status HUD */}
+        <div className="absolute bottom-8 left-8 z-20 font-mono text-xs text-neon-cyan/70 tracking-widest border-l-2 border-neon-cyan pl-3">
+            <p>STATUS: {uiMessage.toUpperCase()}</p>
+            <p>SECURE_LINK: ACTIVE</p>
+            <p>VAULT_ID: OMEGA-7</p>
         </div>
       </div>
 
-      {/* RIGHT PANEL: LOGIN UI */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 relative z-10">
-        <div className="w-full max-w-md space-y-8">
-          
-          {/* Header */}
-          <div className="space-y-2">
-             <div className="flex items-center gap-2 text-neon-cyan mb-4">
-                <Shield size={24} />
-                <span className="text-xs font-bold tracking-[0.3em] uppercase">Secure Document Vault</span>
-             </div>
-             <h1 className="text-4xl font-bold text-white tracking-tight">Enter the Vault</h1>
-             <p className="text-slate-400 text-sm">Align your encrypted assets to unlock access.</p>
-          </div>
+      {/* RIGHT: UI CARD */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 relative z-20">
+         {/* Background Stars (CSS) for mobile */}
+         <div className="lg:hidden absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 pointer-events-none"></div>
 
-          <form onSubmit={handleSubmit} className="space-y-6 mt-8">
+         <div className="w-full max-w-md bg-space-800/50 backdrop-blur-xl border border-white/10 p-8 rounded-2xl shadow-2xl relative overflow-hidden">
             
-            {/* Email */}
-            <div className="space-y-1">
-               <label className="text-[10px] font-medium text-neon-cyan uppercase tracking-wider ml-1">Operative ID</label>
-               <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Fingerprint className={`h-5 w-5 transition-colors duration-300 ${focusState === 'email' ? 'text-neon-cyan' : 'text-slate-600'}`} />
-                  </div>
-                  <input
-                    type="email" required
-                    className="w-full bg-space-900 border border-space-800 text-white text-sm rounded-xl block w-full pl-12 p-4 focus:ring-1 focus:ring-neon-cyan focus:border-neon-cyan transition-all placeholder:text-slate-700"
-                    placeholder="operative@agency.com"
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    onFocus={() => { setFocusState('email'); setConsoleMsg('SCANNING ID...'); }}
-                    onBlur={() => { setFocusState('none'); setConsoleMsg('AWAITING AUTHORIZATION'); }}
-                  />
-               </div>
+            {/* Glowing Top Bar */}
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-neon-cyan to-transparent opacity-50"></div>
+
+            <div className="mb-8">
+                <div className="flex items-center gap-2 mb-2 text-neon-cyan">
+                    <Globe size={20} className="animate-spin-slow" />
+                    <span className="text-xs font-bold tracking-[0.2em] uppercase">Observatory Access</span>
+                </div>
+                <h1 className="text-3xl font-bold text-white">Enter the Vault</h1>
+                <p className="text-slate-400 text-sm mt-2">Align your Star-Key to unlock documents.</p>
             </div>
 
-            {/* Password */}
-            <div className="space-y-1">
-               <label className="text-[10px] font-medium text-neon-cyan uppercase tracking-wider ml-1">Encryption Key</label>
-               <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Lock className={`h-5 w-5 transition-colors duration-300 ${focusState === 'password' ? 'text-neon-cyan' : 'text-slate-600'}`} />
-                  </div>
-                  <input
-                    type={showPassword ? "text" : "password"} required
-                    className="w-full bg-space-900 border border-space-800 text-white text-sm rounded-xl block w-full pl-12 p-4 pr-12 focus:ring-1 focus:ring-neon-cyan focus:border-neon-cyan transition-all placeholder:text-slate-700"
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    onFocus={() => { setFocusState('password'); setConsoleMsg('ENGAGING LOCK MECHANISM...'); }}
-                    onBlur={() => { setFocusState('none'); setConsoleMsg('AWAITING AUTHORIZATION'); }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-600 hover:text-white transition-colors"
-                  >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
-               </div>
+            <form onSubmit={handleSubmit} className="space-y-5">
+                
+                {/* Email Input */}
+                <div className="group">
+                    <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Operative ID</label>
+                    <div className="relative mt-1">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 group-focus-within:text-neon-cyan transition-colors">
+                            <Mail size={18} />
+                        </div>
+                        <input 
+                            type="email" 
+                            required
+                            className="w-full bg-space-900/50 border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white placeholder-slate-600 focus:outline-none focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan transition-all"
+                            placeholder="name@constellation.com"
+                            value={formData.email}
+                            onChange={e => setFormData({...formData, email: e.target.value})}
+                            onFocus={() => { setFocusState('email'); setUiMessage('Calling Constellation...'); }}
+                            onBlur={() => { setFocusState('none'); setUiMessage('Awaiting Authorization...'); }}
+                        />
+                    </div>
+                </div>
+
+                {/* Password Input */}
+                <div className="group">
+                    <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Encryption Key</label>
+                    <div className="relative mt-1">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 group-focus-within:text-neon-cyan transition-colors">
+                            <Lock size={18} />
+                        </div>
+                        <input 
+                            type={showPassword ? "text" : "password"} 
+                            required
+                            className="w-full bg-space-900/50 border border-white/10 rounded-lg py-3 pl-10 pr-10 text-white placeholder-slate-600 focus:outline-none focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan transition-all"
+                            placeholder="••••••••"
+                            value={formData.password}
+                            onChange={e => setFormData({...formData, password: e.target.value})}
+                            onFocus={() => { setFocusState('password'); setUiMessage('Forging Star-Key...'); }}
+                            onBlur={() => { setFocusState('none'); setUiMessage('Awaiting Authorization...'); }}
+                        />
+                        <button 
+                           type="button"
+                           onClick={() => setShowPassword(!showPassword)}
+                           className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-white transition-colors"
+                        >
+                           {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                    </div>
+                    <p className="text-[10px] text-right mt-1 text-neon-cyan/80 cursor-pointer hover:text-neon-cyan">Lost your key?</p>
+                </div>
+
+                {/* CTA Button */}
+                <button 
+                    type="submit"
+                    disabled={loginStatus === 'loading' || loginStatus === 'success'}
+                    className={`
+                        w-full py-3 rounded-lg font-bold text-sm uppercase tracking-wide transition-all duration-300 relative overflow-hidden group
+                        ${loginStatus === 'success' ? 'bg-green-500 text-black' : 'bg-neon-cyan text-black hover:bg-cyan-300'}
+                        disabled:opacity-70 disabled:cursor-not-allowed
+                    `}
+                >
+                    <span className="relative z-10 flex items-center justify-center gap-2">
+                        {loginStatus === 'loading' ? 'Verifying...' : (loginStatus === 'success' ? 'Access Granted' : 'Decrypt & Enter')}
+                        {loginStatus === 'idle' && <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />}
+                    </span>
+                    {/* Sweep Effect */}
+                    <div className="absolute inset-0 bg-white/40 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500"></div>
+                </button>
+            </form>
+
+            <div className="mt-8 text-center border-t border-white/5 pt-6">
+                <p className="text-slate-400 text-xs mb-2">New to the network?</p>
+                <Link to="/register" className="text-neon-cyan text-sm font-medium hover:text-cyan-300 inline-flex items-center gap-1 group">
+                    Initiate Security Clearance <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform"/>
+                </Link>
             </div>
 
-            <button
-              type="submit"
-              disabled={loginStatus === 'loading' || loginStatus === 'success'}
-              className={`
-                w-full py-4 rounded-xl font-bold text-xs uppercase tracking-[0.15em] transition-all duration-300 relative overflow-hidden group
-                ${loginStatus === 'success' ? 'bg-neon-green text-space-950' : 'bg-cyber hover:bg-cyber-glow text-white'}
-                disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-cyber/20 hover:shadow-cyber/40
-              `}
-            >
-              <span className="relative z-10 flex items-center justify-center gap-2">
-                 {loginStatus === 'loading' ? 'DECRYPTING...' : (loginStatus === 'success' ? 'ACCESS GRANTED' : 'UNLOCK VAULT')}
-                 {loginStatus === 'idle' && <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />}
-              </span>
-            </button>
-          </form>
-
-          <div className="pt-8 text-center border-t border-space-800/50">
-             <Link to="/register" className="text-slate-500 text-xs hover:text-neon-cyan transition-colors inline-flex items-center gap-2">
-               No identity key? <span className="underline underline-offset-4 text-slate-300 hover:text-white">Initiate Clearance</span>
-             </Link>
-          </div>
-
-        </div>
+         </div>
       </div>
     </div>
   );

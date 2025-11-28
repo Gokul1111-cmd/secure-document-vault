@@ -1,293 +1,188 @@
-import { useRef, useMemo, useState } from 'react';
+import { useRef, useMemo, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Float, Stars, Sparkles, Text, MeshTransmissionMaterial, MeshDistortMaterial, Octahedron, Icosahedron, Torus } from '@react-three/drei';
+import { Float, Stars, Sparkles, Icosahedron, Octahedron, Sphere, MeshDistortMaterial, Trail } from '@react-three/drei';
 import * as THREE from 'three';
 
-// --- 1. DOCUMENT CAPSULE COMPONENT ---
-// Represents an encrypted file type (PDF, DOC, etc.)
-function DocCapsule({ type, label, color, position, focusState, loginStatus, index, total }) {
-  const group = useRef();
-  
-  useFrame((state, delta) => {
-    if (!group.current) return;
-    const t = state.clock.getElapsedTime();
-
-    // --- ORBIT LOGIC ---
-    // Base radius
-    let targetRadius = 5.5; 
-    let orbitSpeed = 0.2;
-    let bobSpeed = 1;
-
-    // Interaction: Email Focus -> Shift Closer
-    if (focusState === 'email') {
-        targetRadius = 3.8; 
-        orbitSpeed = 0.5; // Speed up slightly
-    }
-    
-    // Interaction: Success -> Merge into Core
-    if (loginStatus === 'success') {
-        targetRadius = 0.2;
-        orbitSpeed = 5;
-    }
-
-    // Interaction: Failure -> Scatter
-    if (loginStatus === 'error') {
-        targetRadius = 15;
-        orbitSpeed = 0;
-    }
-
-    // Calculate orbit position
-    const angle = (t * orbitSpeed) + (index * (Math.PI * 2 / total));
-    const targetX = Math.cos(angle) * targetRadius;
-    const targetZ = Math.sin(angle) * targetRadius;
-
-    // Smoothly move to target position (Lerp)
-    group.current.position.x = THREE.MathUtils.lerp(group.current.position.x, targetX, delta * 3);
-    group.current.position.z = THREE.MathUtils.lerp(group.current.position.z, targetZ, delta * 3);
-    
-    // Gentle bobbing
-    const bobOffset = Math.sin(t * bobSpeed + index) * 0.5;
-    // On success, center Y to 0
-    const targetY = loginStatus === 'success' ? 0 : (position[1] + bobOffset);
-    group.current.position.y = THREE.MathUtils.lerp(group.current.position.y, targetY, delta * 3);
-
-    // Rotate capsule to face outward
-    group.current.lookAt(0, group.current.position.y, 0);
-  });
-
-  // Hide on success after merge
-  const visible = loginStatus !== 'success' || group.current?.position.x > 0.5;
-
-  return (
-    <group ref={group} visible={visible}>
-      {/* Holographic Label */}
-      <Text
-        position={[0, 1.2, 0]}
-        fontSize={0.35}
-        color={color}
-        anchorX="center"
-        anchorY="middle"
-        font="https://fonts.gstatic.com/s/jetbrainsmono/v13/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0Pn5qRSN.woff"
-      >
-        {label}
-      </Text>
-
-      {/* Capsule Body */}
-      <mesh rotation={[Math.PI/2, 0, 0]}>
-        <capsuleGeometry args={[0.3, 1, 4, 8]} />
-        <MeshTransmissionMaterial 
-            backside
-            backsideThickness={0.1}
-            thickness={0.2}
-            chromaticAberration={0.1}
-            anisotropy={0.1}
-            color="#ffffff" 
-            opacity={0.5}
-            roughness={0.2}
-        />
-      </mesh>
-
-      {/* Inner Data Core (Glowing) */}
-      <mesh rotation={[Math.PI/2, 0, 0]}>
-         <cylinderGeometry args={[0.15, 0.15, 0.8, 16]} />
-         <meshStandardMaterial 
-            color={color} 
-            emissive={color}
-            emissiveIntensity={3}
-            toneMapped={false}
-         />
-      </mesh>
-
-      {/* Tech Ring */}
-      <mesh rotation={[0, 0, 0]}>
-          <torusGeometry args={[0.5, 0.02, 16, 32]} />
-          <meshBasicMaterial color={color} transparent opacity={0.4} />
-      </mesh>
-    </group>
-  );
+// --- HELPER: Generate "Star Key" Geometry from Email Hash ---
+// This makes the key look different for every user
+function StarKeyGeometry({ email }) {
+    const seed = email.length > 0 ? email.charCodeAt(0) + email.charCodeAt(email.length-1) : 100;
+    // Simple pseudo-random visual
+    if (seed % 3 === 0) return <Icosahedron args={[0.8, 0]} />;
+    if (seed % 3 === 1) return <Octahedron args={[0.8, 0]} />;
+    return <Sphere args={[0.8, 16, 16]} />;
 }
 
-// --- 2. LOCK CORE COMPONENT ---
-function LockCore({ focusState, loginStatus }) {
-  const groupRef = useRef();
+// --- COMPONENT: THE ASTRAL VAULT ---
+function AstralVault({ loginStatus, focusState }) {
+  const vaultRef = useRef();
   const platesRef = useRef();
-  const scannerRef = useRef();
-  const centerRef = useRef();
-
-  // Dynamic Colors
-  const baseColor = loginStatus === 'error' ? '#ef4444' : (loginStatus === 'success' ? '#10b981' : '#1D4DF0');
   
   useFrame((state, delta) => {
     const t = state.clock.getElapsedTime();
 
-    // --- A. LOCK PLATES (Password Focus) ---
-    if (platesRef.current) {
-        const isLocking = focusState === 'password';
-        
-        // Scale: Tighten (0.9) or Idle (1.1)
-        const targetScale = isLocking ? 0.9 : 1.1;
-        platesRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), delta * 4);
-
-        // Rotation Speed
-        const rotSpeed = isLocking ? 2 : 0.2;
-        platesRef.current.rotation.z += delta * rotSpeed;
-        platesRef.current.rotation.x = Math.sin(t * 0.2) * 0.2;
+    // 1. Base Rotation (Idle: 18s revolution)
+    if (vaultRef.current) {
+       vaultRef.current.rotation.y += delta * 0.05; 
     }
 
-    // --- B. SCANNER RING (Email Focus) ---
-    if (scannerRef.current) {
-        const isScanning = focusState === 'email';
-        const targetScale = isScanning ? 1.4 : 0;
-        
-        scannerRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), delta * 5);
-        
-        if (isScanning) {
-            scannerRef.current.rotation.x = Math.PI / 2;
-            scannerRef.current.position.y = Math.sin(t * 4) * 2.5; // Fast scan
+    // 2. INTERACTION: Password Focus -> Tighten Plates
+    if (focusState === 'password') {
+        if (platesRef.current) {
+            platesRef.current.scale.lerp(new THREE.Vector3(0.9, 0.9, 0.9), delta * 2);
+            platesRef.current.rotation.z = THREE.MathUtils.lerp(platesRef.current.rotation.z, Math.PI/4, delta * 2);
+        }
+    } else {
+        if (platesRef.current) {
+            platesRef.current.scale.lerp(new THREE.Vector3(1.1, 1.1, 1.1), delta * 2); // "Breathing" open state
+            platesRef.current.rotation.z = THREE.MathUtils.lerp(platesRef.current.rotation.z, 0, delta * 2);
         }
     }
 
-    // --- C. FAILURE SHAKE ---
-    if (loginStatus === 'error' && groupRef.current) {
-        groupRef.current.position.x = Math.sin(t * 50) * 0.2; // Violent shake
-    } else if (groupRef.current) {
-        groupRef.current.position.x = THREE.MathUtils.lerp(groupRef.current.position.x, 0, delta * 5);
-    }
-
-    // --- D. SUCCESS OPEN ---
-    if (loginStatus === 'success' && groupRef.current) {
-        groupRef.current.rotation.y += delta * 5; // Fast spin
-        // Scale down to "absorb" key
-        groupRef.current.scale.lerp(new THREE.Vector3(0,0,0), delta * 1);
+    // 3. LOGIN STATUS: Success/Fail
+    if (loginStatus === 'success') {
+        // Cinematic Open
+        vaultRef.current.scale.lerp(new THREE.Vector3(0, 0, 0), delta * 3); // Implode to reveal content
+    } else if (loginStatus === 'error') {
+        // Glitch Shake
+        vaultRef.current.position.x = Math.sin(t * 50) * 0.2;
+    } else {
+        vaultRef.current.position.x = THREE.MathUtils.lerp(vaultRef.current.position.x, 0, delta * 5);
+        vaultRef.current.scale.lerp(new THREE.Vector3(1, 1, 1), delta * 2);
     }
   });
 
+  const color = loginStatus === 'error' ? '#ff2a6d' : '#1D4DF0';
+  const emissive = loginStatus === 'error' ? '#ff2a6d' : '#00E5FF';
+
   return (
-    <group ref={groupRef}>
-      {/* Inner Reactor */}
-      <mesh ref={centerRef}>
-        <icosahedronGeometry args={[1.2, 2]} />
-        <MeshDistortMaterial 
-            color={baseColor}
-            emissive={baseColor}
-            emissiveIntensity={2}
-            distort={0.3}
-            speed={2}
-            roughness={0.2}
+    <group ref={vaultRef}>
+      {/* Core Crystalline Structure */}
+      <mesh>
+        <icosahedronGeometry args={[2, 1]} />
+        <meshPhysicalMaterial 
+            color={color}
+            emissive={emissive}
+            emissiveIntensity={0.5}
+            roughness={0}
+            metalness={0.9}
+            transmission={0.6} // Glass-like
+            thickness={2}
+            wireframe={false}
         />
       </mesh>
-
-      {/* Armored Plates */}
+      
+      {/* Floating Outer Plates */}
       <group ref={platesRef}>
          <mesh>
-            <icosahedronGeometry args={[1.8, 0]} />
+            <icosahedronGeometry args={[2.2, 0]} />
             <meshStandardMaterial 
-                color="#1e293b" 
-                metalness={0.9} 
-                roughness={0.2} 
-                wireframe={false}
-            />
-         </mesh>
-         <mesh scale={1.01}>
-            <icosahedronGeometry args={[1.8, 0]} />
-            <meshStandardMaterial 
-                color="#334155" 
-                wireframe={true}
-                emissive={baseColor}
-                emissiveIntensity={0.2}
+                color={emissive} 
+                wireframe={true} 
+                transparent 
+                opacity={0.3} 
             />
          </mesh>
       </group>
-
-      {/* Scanning Laser */}
-      <mesh ref={scannerRef}>
-         <torusGeometry args={[2.5, 0.05, 16, 64]} />
-         <meshBasicMaterial color="#00E5FF" toneMapped={false} />
-      </mesh>
     </group>
   );
 }
 
-// --- 3. ACCESS KEY (Success State) ---
-function AccessKey({ visible, emailHash }) {
-    const ref = useRef();
+// --- COMPONENT: DOCUMENT STARS ---
+function DocumentStars({ focusState, emailInput }) {
+    const group = useRef();
     
+    // Create 20 "stars" (documents)
+    const stars = useMemo(() => {
+        return new Array(20).fill(0).map(() => ({
+            x: (Math.random() - 0.5) * 15,
+            y: (Math.random() - 0.5) * 15,
+            z: (Math.random() - 0.5) * 10,
+            scale: Math.random() * 0.5 + 0.2,
+            speed: Math.random() * 0.2
+        }));
+    }, []);
+
     useFrame((state, delta) => {
-        if(!ref.current || !visible) return;
-        ref.current.rotation.y += delta * 2;
-        ref.current.rotation.z += delta;
+        if (!group.current) return;
+        
+        // "Gravity Bloom" - Pull stars closer on Email Focus
+        const targetScale = focusState === 'email' ? 0.8 : 1.5; // 0.8 = closer orbit
+        
+        group.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), delta * 2);
+        group.current.rotation.y += delta * 0.1;
+        
+        // Typing Pulse Effect
+        if (emailInput.length > 0) {
+             group.current.children[0].scale.setScalar(1.5 + Math.sin(state.clock.elapsedTime * 10) * 0.5);
+        }
     });
 
+    return (
+        <group ref={group}>
+            {stars.map((s, i) => (
+                <Float key={i} speed={2} rotationIntensity={2} floatIntensity={2}>
+                    <mesh position={[s.x, s.y, s.z]}>
+                        <octahedronGeometry args={[s.scale, 0]} />
+                        <meshStandardMaterial 
+                            color={i === 0 ? "#00E5FF" : "#60a5fa"} // One "hero" star
+                            emissive="#1D4DF0"
+                            emissiveIntensity={2}
+                            toneMapped={false}
+                        />
+                    </mesh>
+                </Float>
+            ))}
+        </group>
+    );
+}
+
+// --- COMPONENT: THE STAR KEY (Appears on Success) ---
+function StarKey({ visible, email }) {
     if (!visible) return null;
 
     return (
-        <group ref={ref} scale={0}> 
-           <Float speed={5} rotationIntensity={2} floatIntensity={0}>
-              <mesh>
-                 <octahedronGeometry args={[1.5, 0]} />
-                 <MeshTransmissionMaterial 
-                    color="#00E5FF" 
-                    emissive="#ffffff"
-                    emissiveIntensity={2}
-                    background="#000"
-                    thickness={2}
-                    anisotropy={1}
-                 />
-              </mesh>
-              <Sparkles count={50} scale={4} size={6} speed={0.4} color="#00E5FF" />
-           </Float>
+        <group position={[0, 0, 3]}>
+            <Float speed={5} rotationIntensity={2} floatIntensity={0.5}>
+                <mesh>
+                    <StarKeyGeometry email={email} />
+                    <MeshDistortMaterial 
+                        color="#00E5FF" 
+                        emissive="#ffffff"
+                        emissiveIntensity={4}
+                        speed={5}
+                        distort={0.6}
+                    />
+                </mesh>
+            </Float>
+            <Sparkles count={50} scale={4} size={5} speed={2} color="#00E5FF" />
         </group>
-    )
+    );
 }
 
+
 // --- MAIN EXPORT ---
-export default function Secure3DScene({ focusState = 'none', loginStatus = 'idle' }) {
-  
-  // Static Data for Capsules
-  const capsules = useMemo(() => [
-    { type: 'PDF', label: 'CONFIDENTIAL.PDF', color: '#ef4444', y: 0 },
-    { type: 'DOC', label: 'CONTRACT_V2.DOCX', color: '#3b82f6', y: 1.5 },
-    { type: 'XLS', label: 'FINANCE_Q4.XLSX', color: '#10b981', y: -1.5 },
-    { type: 'IMG', label: 'BLUEPRINT.PNG', color: '#a855f7', y: 0.5 },
-    { type: 'ZIP', label: 'ARCHIVE_24.ZIP', color: '#f59e0b', y: -0.5 },
-    { type: 'DAT', label: 'KEY_FRAG_01.DAT', color: '#64748b', y: 2 },
-  ], []);
-
+export default function Secure3DScene({ focusState = 'none', loginStatus = 'idle', emailInput = '' }) {
   return (
-    <div className="absolute inset-0 z-0 bg-space-950">
-      <Canvas camera={{ position: [0, 0, 14], fov: 35 }} dpr={[1, 2]}>
-        {/* Cinematic Environment */}
-        <fog attach="fog" args={['#02040a', 10, 30]} />
-        <ambientLight intensity={0.4} />
+    <div className="absolute inset-0 z-0 bg-space-900">
+      <Canvas camera={{ position: [0, 0, 10], fov: 40 }}>
+        {/* Environment */}
+        <fog attach="fog" args={['#050a14', 5, 25]} />
+        <ambientLight intensity={0.2} />
         <pointLight position={[10, 10, 10]} intensity={2} color="#1D4DF0" />
-        <pointLight position={[-10, -10, -10]} intensity={2} color="#00E5FF" />
-        <spotLight position={[0, 10, 0]} intensity={1} angle={0.5} />
-
-        {/* The Vault */}
-        <LockCore focusState={focusState} loginStatus={loginStatus} />
+        <pointLight position={[-10, -10, -10]} intensity={1} color="#00E5FF" />
         
-        {/* The Documents */}
-        {capsules.map((c, i) => (
-            <DocCapsule 
-                key={i} 
-                index={i}
-                total={capsules.length}
-                type={c.type} 
-                label={c.label}
-                color={c.color}
-                position={[0, c.y, 0]}
-                focusState={focusState}
-                loginStatus={loginStatus}
-            />
-        ))}
+        {/* Main Elements */}
+        <AstralVault loginStatus={loginStatus} focusState={focusState} />
+        
+        {/* The Constellation */}
+        <DocumentStars focusState={focusState} emailInput={emailInput} />
+        
+        {/* Success Animation Object */}
+        <StarKey visible={loginStatus === 'success'} email={emailInput} />
 
-        {/* Success Crystal (Hidden by default logic inside component) */}
-        {/* <AccessKey visible={loginStatus === 'success'} /> */} 
-        {/* Note: For this version, we let the lock implode instead of swapping geometries to keep transitions smooth */}
-
-        {/* Atmosphere */}
-        <Stars radius={80} depth={50} count={3000} factor={4} saturation={0} fade speed={0.5} />
-        <Sparkles count={60} scale={15} size={3} speed={0.2} opacity={0.4} color="#1D4DF0" />
+        {/* Background */}
+        <Stars radius={80} depth={60} count={3000} factor={4} saturation={0} fade speed={0.5} />
       </Canvas>
     </div>
   );
