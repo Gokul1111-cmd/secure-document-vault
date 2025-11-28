@@ -310,7 +310,7 @@ function DashboardUser() {
         </Card.Content>
       </Card>
 
-      <Modal isOpen={showUploadModal} onClose={() => setShowUploadModal(false)} title="Upload Secure Document" size="md">
+      <Modal sOpen={showUploadModal} onClose={() => setShowUploadModal(false)} title="Upload Secure Document" size="md">
          <div {...getRootProps()} className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${isDragActive ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
             <input {...getInputProps()} />
             <Upload className="mx-auto h-12 w-12 text-slate-400" />
