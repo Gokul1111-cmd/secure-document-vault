@@ -34,24 +34,24 @@ function Modal({ isOpen, onClose, title, children, size = 'md' }) {
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-screen items-center justify-center px-3 sm:px-4">
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm transition-opacity"
+          className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
           onClick={onClose}
         ></div>
         
-        <div className={`relative w-full ${sizeClasses[size]} transform rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl transition-all`}>
-          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-5 py-3.5 sm:px-6">
-            <h3 className="text-base font-semibold text-slate-900 dark:text-white sm:text-lg">{title}</h3>
+        <div className={`relative w-full ${sizeClasses[size]} transform rounded-xl bg-white shadow-2xl transition-all`}>
+          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3.5 sm:px-6">
+            <h3 className="text-base font-semibold text-slate-900 sm:text-lg">{title}</h3>
             <Button
               variant="outline"
               size="sm"
               onClick={onClose}
-              className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="p-1 hover:bg-slate-100"
             >
               <X size={18} />
             </Button>
           </div>
           
-          <div className="p-5 sm:p-6 text-slate-900 dark:text-slate-100">
+          <div className="p-5 sm:p-6">
             {children}
           </div>
         </div>

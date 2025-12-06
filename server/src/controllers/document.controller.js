@@ -1,52 +1,52 @@
 const multer = require('multer');
-const fs = require('fs');
-const path = require('path');
 const { getPrismaClient } = require('../config/prisma');
 const { createAuditLog } = require('../services/auditLog.service');
 const {
   generateAESKey,
-  createEncryptStream,
-  createDecryptStream,
+  encryptFileBuffer,
+  decryptFileBuffer,
   wrapAESKey,
   unwrapAESKey,
 } = require('../services/encryption.service');
 const {
-  uploadEncryptedStream,
-  getDownloadStream,
+  uploadEncryptedFile,
+  downloadEncryptedFile,
   deleteFile,
 } = require('../services/storage.service');
 const bcrypt = require('bcryptjs');
 
-// USE DISK STORAGE TO PREVENT MEMORY CRASHES
 const upload = multer({
-  dest: 'uploads/', // Temp folder
+  storage: multer.memoryStorage(),
   limits: { fileSize: 50 * 1024 * 1024 },
 }).single('file');
 
 const uploadDocument = async (req, res, next) => {
   upload(req, res, async (err) => {
-    if (err) return res.status(400).json({ status: 'error', message: err.message });
-    if (!req.file) return res.status(400).json({ status: 'error', message: 'No file provided' });
-
-    const filePath = req.file.path;
+    if (err) {
+      return res.status(400).json({
+        status: 'error',
+        message: err.message || 'File upload failed',
+      });
+    }
 
     try {
-      const userId = req.user.userId;
-      const { originalname, mimetype, size } = req.file;
+      if (!req.file) {
+        console.warn('[UPLOAD] Missing file field. Received fields:', Object.keys(req.body));
+        return res.status(400).json({
+          status: 'error',
+          message: 'No file provided',
+        });
+      }
 
-      // 1. Generate Keys
+      const userId = req.user.userId;
+      const { originalname, mimetype, size, buffer } = req.file;
+
       const aesKey = generateAESKey();
+      const encryptedBuffer = encryptFileBuffer(buffer, aesKey);
       const wrappedKey = wrapAESKey(aesKey);
 
-      // 2. Setup Streams
-      const fileReadStream = fs.createReadStream(filePath);
-      const { cipher, output } = createEncryptStream(aesKey);
+      const storagePath = await uploadEncryptedFile(encryptedBuffer, originalname, mimetype);
 
-      // 3. Pipe: File -> Encrypt -> Firebase
-      fileReadStream.pipe(cipher);
-      const storagePath = await uploadEncryptedStream(output, originalname, mimetype);
-
-      // 4. Save Metadata to DB
       const prisma = getPrismaClient();
       const document = await prisma.document.create({
         data: {
@@ -58,9 +58,6 @@ const uploadDocument = async (req, res, next) => {
           encryptedAesKey: wrappedKey,
         },
       });
-
-      // 5. Cleanup Temp File
-      await fs.promises.unlink(filePath);
 
       await createAuditLog({
         userId,
@@ -83,9 +80,6 @@ const uploadDocument = async (req, res, next) => {
         },
       });
     } catch (error) {
-      // Cleanup on error
-      if (fs.existsSync(filePath)) await fs.promises.unlink(filePath);
-      
       await createAuditLog({
         userId: req.user.userId,
         action: 'UPLOAD_FAILED',
@@ -102,47 +96,27 @@ const uploadDocument = async (req, res, next) => {
 const getDocuments = async (req, res, next) => {
   try {
     const userId = req.user.userId;
-    const { page = 1, limit = 10 } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    const take = parseInt(limit);
-
     const prisma = getPrismaClient();
-    
-    // Fetch documents AND aggregate stats in parallel
-    const [documents, total, aggregations] = await Promise.all([
-        prisma.document.findMany({
-            where: { ownerUserId: userId },
-            orderBy: { createdAt: 'desc' },
-            skip,
-            take,
-            select: {
-              id: true, fileName: true, fileSize: true, mimeType: true,
-              downloadCount: true, lastEditedAt: true, lastDownloadAt: true,
-              sharedStatus: true, createdAt: true,
-            },
-        }),
-        prisma.document.count({ where: { ownerUserId: userId } }),
-        prisma.document.aggregate({
-            where: { ownerUserId: userId },
-            _sum: { fileSize: true, downloadCount: true }
-        })
-    ]);
+
+    const documents = await prisma.document.findMany({
+      where: { ownerUserId: userId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        fileName: true,
+        fileSize: true,
+        mimeType: true,
+        downloadCount: true,
+        lastEditedAt: true,
+        lastDownloadAt: true,
+        sharedStatus: true,
+        createdAt: true,
+      },
+    });
 
     res.json({
       status: 'success',
-      data: {
-          documents,
-          stats: {
-             totalFiles: total,
-             totalSize: aggregations._sum.fileSize || 0,
-             totalDownloads: aggregations._sum.downloadCount || 0
-          },
-          pagination: {
-              total,
-              page: parseInt(page),
-              pages: Math.ceil(total / take)
-          }
-      }
+      data: documents,
     });
   } catch (error) {
     next(error);
@@ -154,84 +128,228 @@ const getDocumentMetadata = async (req, res, next) => {
     const { id } = req.params;
     const userId = req.user.userId;
     const prisma = getPrismaClient();
-    const document = await prisma.document.findUnique({ where: { id } });
 
-    if (!document) return res.status(404).json({ status: 'error', message: 'Document not found' });
-    if (document.ownerUserId !== userId) return res.status(403).json({ status: 'error', message: 'Access denied' });
+    const document = await prisma.document.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        ownerUserId: true,
+        fileName: true,
+        fileSize: true,
+        mimeType: true,
+        downloadCount: true,
+        lastEditedAt: true,
+        lastDownloadAt: true,
+        sharedStatus: true,
+        createdAt: true,
+      },
+    });
 
-    res.json({ status: 'success', data: document });
+    if (!document) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Document not found',
+      });
+    }
+
+    if (document.ownerUserId !== userId) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Access denied',
+      });
+    }
+
+    res.json({
+      status: 'success',
+      data: document,
+    });
   } catch (error) {
     next(error);
   }
 };
 
-// HELPER FOR DOWNLOAD/VIEW
-const streamDocument = async (req, res, disposition, next) => {
+const downloadDocument = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { pin } = req.body;
     const userId = req.user.userId;
 
-    if (!pin) return res.status(400).json({ status: 'error', message: 'PIN required' });
+    if (!pin) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'PIN required for download',
+      });
+    }
 
     const prisma = getPrismaClient();
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) return res.status(404).json({ status: 'error', message: 'User not found' });
+
+    if (!user) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User not found',
+      });
+    }
 
     const isPinValid = user.viewPinHash ? await bcrypt.compare(pin, user.viewPinHash) : false;
     if (!isPinValid) {
       await createAuditLog({
-        userId, action: `${disposition.toUpperCase()}_FAILED`, docId: id, status: 'FAILURE',
-        message: 'Invalid pin', ipAddr: req.ip, userAgent: req.get('user-agent'),
+        userId,
+        action: 'DOWNLOAD_FAILED',
+        docId: id,
+        status: 'FAILURE',
+        message: 'Invalid pin',
+        ipAddr: req.ip,
+        userAgent: req.get('user-agent'),
       });
-      return res.status(401).json({ status: 'error', message: 'Invalid pin' });
+
+      return res.status(401).json({
+        status: 'error',
+        message: 'Invalid pin',
+      });
     }
 
     const document = await prisma.document.findUnique({ where: { id } });
-    if (!document) return res.status(404).json({ status: 'error', message: 'Document not found' });
-    if (document.ownerUserId !== userId) return res.status(403).json({ status: 'error', message: 'Access denied' });
 
-    // Stream Setup
-    const aesKey = unwrapAESKey(document.encryptedAesKey);
-    const downloadStream = getDownloadStream(document.storagePath);
-    const decryptTransform = createDecryptStream(aesKey);
-
-    // Set Headers
-    res.setHeader('Content-Type', document.mimeType);
-    res.setHeader('Content-Disposition', `${disposition}; filename="${document.fileName}"`);
-
-    // Pipe: Storage -> Decrypt -> Response
-    downloadStream.pipe(decryptTransform).pipe(res);
-
-    downloadStream.on('error', (err) => {
-      console.error('Stream error:', err);
-      if (!res.headersSent) res.status(500).json({ status: 'error', message: 'Stream error' });
-    });
-
-    decryptTransform.on('error', (err) => {
-      console.error('Decryption error:', err);
-      // If headers sent, stream will just cut off, simpler to let client handle
-    });
-
-    if (disposition === 'attachment') {
-      await prisma.document.update({
-        where: { id },
-        data: { downloadCount: { increment: 1 }, lastDownloadAt: new Date() },
+    if (!document) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Document not found',
       });
     }
 
-    await createAuditLog({
-      userId, action: disposition === 'attachment' ? 'DOWNLOAD' : 'VIEW', docId: id, status: 'SUCCESS',
-      ipAddr: req.ip, userAgent: req.get('user-agent'),
+    if (document.ownerUserId !== userId) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Access denied',
+      });
+    }
+
+    const encryptedBuffer = await downloadEncryptedFile(document.storagePath);
+    const aesKey = unwrapAESKey(document.encryptedAesKey);
+    const decryptedBuffer = decryptFileBuffer(encryptedBuffer, aesKey);
+
+    await prisma.document.update({
+      where: { id },
+      data: {
+        downloadCount: { increment: 1 },
+        lastDownloadAt: new Date(),
+      },
     });
 
+    await createAuditLog({
+      userId,
+      action: 'DOWNLOAD',
+      docId: id,
+      status: 'SUCCESS',
+      ipAddr: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+
+    res.setHeader('Content-Disposition', `attachment; filename="${document.fileName}"`);
+    res.setHeader('Content-Type', document.mimeType);
+    res.send(decryptedBuffer);
   } catch (error) {
+    await createAuditLog({
+      userId: req.user.userId,
+      action: 'DOWNLOAD_FAILED',
+      docId: req.params.id,
+      status: 'FAILURE',
+      message: error.message,
+      ipAddr: req.ip,
+      userAgent: req.get('user-agent'),
+    });
     next(error);
   }
 };
 
-const downloadDocument = (req, res, next) => streamDocument(req, res, 'attachment', next);
-const viewDocument = (req, res, next) => streamDocument(req, res, 'inline', next);
+const viewDocument = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { pin } = req.body;
+    const userId = req.user.userId;
+
+    if (!pin) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'PIN required to view document',
+      });
+    }
+
+    const prisma = getPrismaClient();
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User not found',
+      });
+    }
+
+    const isPinValid = user.viewPinHash ? await bcrypt.compare(pin, user.viewPinHash) : false;
+    if (!isPinValid) {
+      await createAuditLog({
+        userId,
+        action: 'VIEW_FAILED',
+        docId: id,
+        status: 'FAILURE',
+        message: 'Invalid pin',
+        ipAddr: req.ip,
+        userAgent: req.get('user-agent'),
+      });
+
+      return res.status(401).json({
+        status: 'error',
+        message: 'Invalid pin',
+      });
+    }
+
+    const document = await prisma.document.findUnique({ where: { id } });
+
+    if (!document) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Document not found',
+      });
+    }
+
+    if (document.ownerUserId !== userId) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Access denied',
+      });
+    }
+
+    const encryptedBuffer = await downloadEncryptedFile(document.storagePath);
+    const aesKey = unwrapAESKey(document.encryptedAesKey);
+    const decryptedBuffer = decryptFileBuffer(encryptedBuffer, aesKey);
+
+    await createAuditLog({
+      userId,
+      action: 'VIEW',
+      docId: id,
+      status: 'SUCCESS',
+      ipAddr: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+
+    // Set headers for inline viewing (NOT downloading)
+    res.setHeader('Content-Type', document.mimeType || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename="${document.fileName}"`);
+    res.send(decryptedBuffer);
+  } catch (error) {
+    await createAuditLog({
+      userId: req.user.userId,
+      action: 'VIEW_FAILED',
+      docId: req.params.id,
+      status: 'FAILURE',
+      message: error.message,
+      ipAddr: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+    next(error);
+  }
+};
 
 const deleteDocument = async (req, res, next) => {
   try {
@@ -240,22 +358,47 @@ const deleteDocument = async (req, res, next) => {
     const prisma = getPrismaClient();
 
     const document = await prisma.document.findUnique({ where: { id } });
-    if (!document) return res.status(404).json({ status: 'error', message: 'Document not found' });
+
+    if (!document) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Document not found',
+      });
+    }
 
     if (document.ownerUserId !== userId && req.user.role !== 'ADMIN') {
-      return res.status(403).json({ status: 'error', message: 'Access denied' });
+      return res.status(403).json({
+        status: 'error',
+        message: 'Access denied',
+      });
     }
 
     await deleteFile(document.storagePath);
     await prisma.document.delete({ where: { id } });
 
     await createAuditLog({
-      userId, action: 'DELETE', docId: id, status: 'SUCCESS',
-      ipAddr: req.ip, userAgent: req.get('user-agent'),
+      userId,
+      action: 'DELETE',
+      docId: id,
+      status: 'SUCCESS',
+      ipAddr: req.ip,
+      userAgent: req.get('user-agent'),
     });
 
-    res.json({ status: 'success', message: 'Document deleted successfully' });
+    res.json({
+      status: 'success',
+      message: 'Document deleted successfully',
+    });
   } catch (error) {
+    await createAuditLog({
+      userId: req.user.userId,
+      action: 'DELETE_FAILED',
+      docId: req.params.id,
+      status: 'FAILURE',
+      message: error.message,
+      ipAddr: req.ip,
+      userAgent: req.get('user-agent'),
+    });
     next(error);
   }
 };

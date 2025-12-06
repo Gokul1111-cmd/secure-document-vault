@@ -80,9 +80,9 @@ function AuditLogs() {
 
   const getStatusBadge = (status) => {
     const styles = {
-      success: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200',
-      failed: 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-200',
-      warning: 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-200'
+      success: 'bg-emerald-100 text-emerald-800',
+      failed: 'bg-red-100 text-red-800',
+      warning: 'bg-amber-100 text-amber-800'
     };
 
     return (
@@ -129,8 +129,8 @@ function AuditLogs() {
     <div className="space-y-6 lg:space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1.5">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">Audit Logs</h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400 sm:text-base">Monitor system activity and security events.</p>
+          <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Audit Logs</h1>
+          <p className="text-sm text-slate-600 sm:text-base">Monitor system activity and security events.</p>
         </div>
         <Button onClick={exportLogs} className="flex items-center space-x-2" size="md">
           <Download size={18} />
@@ -146,11 +146,11 @@ function AuditLogs() {
         <>
           {/* Statistics */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:gap-6">
-            <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200 dark:from-blue-500/20 dark:to-blue-500/5 dark:border-blue-500/30">
+            <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-blue-600 dark:text-blue-200 sm:text-sm">Total Events</p>
-                  <p className="text-xl font-bold text-blue-900 dark:text-blue-100 sm:text-2xl">{stats.total}</p>
+                  <p className="text-xs font-medium text-blue-600 sm:text-sm">Total Events</p>
+                  <p className="text-xl font-bold text-blue-900 sm:text-2xl">{stats.total}</p>
                 </div>
                 <div className="rounded-lg bg-blue-600 p-3">
                   <Activity className="h-5 w-5 text-white" />
@@ -158,11 +158,11 @@ function AuditLogs() {
               </div>
             </Card>
 
-            <Card className="bg-gradient-to-r from-emerald-50 to-emerald-100 border-emerald-200 dark:from-emerald-500/20 dark:to-emerald-500/5 dark:border-emerald-500/30">
+            <Card className="bg-gradient-to-r from-emerald-50 to-emerald-100 border-emerald-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-emerald-600 dark:text-emerald-200 sm:text-sm">Successful Actions</p>
-                  <p className="text-xl font-bold text-emerald-900 dark:text-emerald-100 sm:text-2xl">{stats.successful}</p>
+                  <p className="text-xs font-medium text-emerald-600 sm:text-sm">Successful Actions</p>
+                  <p className="text-xl font-bold text-emerald-900 sm:text-2xl">{stats.successful}</p>
                 </div>
                 <div className="rounded-lg bg-emerald-600 p-3">
                   <Shield className="h-5 w-5 text-white" />
@@ -170,11 +170,11 @@ function AuditLogs() {
               </div>
             </Card>
 
-            <Card className="bg-gradient-to-r from-red-50 to-red-100 border-red-200 dark:from-red-500/20 dark:to-red-500/5 dark:border-red-500/30">
+            <Card className="bg-gradient-to-r from-red-50 to-red-100 border-red-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-red-600 dark:text-red-200 sm:text-sm">Failed Attempts</p>
-                  <p className="text-xl font-bold text-red-900 dark:text-red-100 sm:text-2xl">{stats.failed}</p>
+                  <p className="text-xs font-medium text-red-600 sm:text-sm">Failed Attempts</p>
+                  <p className="text-xl font-bold text-red-900 sm:text-2xl">{stats.failed}</p>
                 </div>
                 <div className="rounded-lg bg-red-600 p-3">
                   <Globe className="h-5 w-5 text-white" />
@@ -182,11 +182,11 @@ function AuditLogs() {
               </div>
             </Card>
 
-            <Card className="bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200 dark:from-purple-500/20 dark:to-purple-600/5 dark:border-purple-500/30">
+            <Card className="bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-purple-600 dark:text-purple-200 sm:text-sm">Unique Users</p>
-                  <p className="text-xl font-bold text-purple-900 dark:text-purple-100 sm:text-2xl">{stats.uniqueUsers}</p>
+                  <p className="text-xs font-medium text-purple-600 sm:text-sm">Unique Users</p>
+                  <p className="text-xl font-bold text-purple-900 sm:text-2xl">{stats.uniqueUsers}</p>
                 </div>
                 <div className="rounded-lg bg-purple-600 p-3">
                   <User className="h-5 w-5 text-white" />
@@ -211,7 +211,7 @@ function AuditLogs() {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 sm:w-auto"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 sm:w-auto"
               >
                 <option value="all">All Status</option>
                 <option value="success">Success</option>
@@ -222,7 +222,7 @@ function AuditLogs() {
               <select
                 value={selectedDateRange}
                 onChange={(e) => setSelectedDateRange(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 sm:w-auto"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 sm:w-auto"
               >
                 <option value="all">All Time</option>
                 <option value="today">Today</option>
@@ -261,36 +261,36 @@ function AuditLogs() {
             </Table.Header>
             <Table.Body>
               {filteredLogs.map((log) => (
-                <Table.Row key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/70">
+                <Table.Row key={log.id} className="hover:bg-slate-50">
                   <Table.Cell>
                     <div className="flex items-center space-x-2">
                       {getActionIcon(log.action)}
-                      <span className="text-sm font-medium text-slate-900 dark:text-white sm:text-base">{log.action}</span>
+                      <span className="text-sm font-medium text-slate-900 sm:text-base">{log.action}</span>
                     </div>
                   </Table.Cell>
                   <Table.Cell>
-                    <div className="text-sm font-medium text-slate-900 dark:text-white sm:text-base">{log.user}</div>
+                    <div className="text-sm font-medium text-slate-900 sm:text-base">{log.user}</div>
                   </Table.Cell>
                   <Table.Cell>
-                    <span className="text-sm text-slate-600 dark:text-slate-300 sm:text-base">{log.resource}</span>
+                    <span className="text-sm text-slate-600 sm:text-base">{log.resource}</span>
                   </Table.Cell>
                   <Table.Cell>
-                    <div className="text-xs text-slate-600 dark:text-slate-300 sm:text-sm">
-                      <div className="font-medium text-slate-900 dark:text-white">
+                    <div className="text-xs text-slate-600 sm:text-sm">
+                      <div className="font-medium text-slate-900">
                         {formatTimestamp(log.timestamp).split(',')[1]}
                       </div>
-                      <div className="text-slate-500 dark:text-slate-400">
+                      <div className="text-slate-500">
                         {formatTimestamp(log.timestamp).split(',')[0]}
                       </div>
                     </div>
                   </Table.Cell>
                   <Table.Cell>
-                    <code className="text-xs bg-slate-100 dark:bg-slate-800/70 px-2 py-1 rounded">
+                    <code className="text-xs bg-slate-100 px-2 py-1 rounded">
                       {log.ipAddress}
                     </code>
                   </Table.Cell>
                   <Table.Cell>
-                    <span className="text-xs text-slate-600 dark:text-slate-300 sm:text-sm max-w-32 truncate block">
+                    <span className="text-xs text-slate-600 sm:text-sm max-w-32 truncate block">
                       {log.userAgent}
                     </span>
                   </Table.Cell>
@@ -303,7 +303,7 @@ function AuditLogs() {
           </Table>
 
           {filteredLogs.length === 0 && (
-            <div className="py-10 text-center text-slate-500 dark:text-slate-400">
+            <div className="py-10 text-center text-slate-500">
               <Activity className="mx-auto mb-3 h-10 w-10 text-slate-300" />
               <p className="text-sm sm:text-base">No audit logs found matching your criteria.</p>
             </div>
