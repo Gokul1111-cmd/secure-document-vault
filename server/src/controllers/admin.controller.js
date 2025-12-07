@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { getPrismaClient } = require('../config/prisma');
 const { createAuditLog } = require('../services/auditLog.service');
+const { deleteFile } = require('../services/storage.service');
 const env = require('../config/env');
 
 const getUsers = async (req, res, next) => {
@@ -302,6 +303,65 @@ const getAllDocuments = async (req, res, next) => {
   }
 };
 
+const deleteUser = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const prisma = getPrismaClient();
+
+    // 1. Find user and their documents
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { documents: true }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User not found',
+      });
+    }
+
+    // 2. Prevent deleting Admins
+    if (user.role === 'ADMIN') {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Cannot delete admin users',
+      });
+    }
+
+    // 3. Delete physical files from Firebase/Storage
+    if (user.documents && user.documents.length > 0) {
+      const deletePromises = user.documents.map(doc =>
+        deleteFile(doc.storagePath).catch(err => 
+          // Log but continue if file missing in storage
+          console.error(`Failed to delete file ${doc.storagePath}:`, err.message)
+        )
+      );
+      await Promise.all(deletePromises);
+    }
+
+    // 4. Delete user from DB (Cascades to documents & logs)
+    await prisma.user.delete({ where: { id: userId } });
+
+    // 5. Log the action
+    await createAuditLog({
+      userId: req.user.userId,
+      action: 'USER_DELETED',
+      status: 'SUCCESS',
+      message: `Deleted user ${user.email}`,
+      ipAddr: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+
+    res.json({
+      status: 'success',
+      message: 'User and associated data deleted successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getUsers,
   getStats,
@@ -310,4 +370,5 @@ module.exports = {
   requestPasswordReset,
   getAuditLogs,
   getAllDocuments,
+  deleteUser,
 };

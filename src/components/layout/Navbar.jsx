@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { Shield, LogOut, ChevronDown, Settings, Menu } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext.jsx';
+import { LogOut, ChevronDown, Settings, Menu, Sun, Moon } from 'lucide-react';
 
 function Navbar({ onToggleSidebar = () => {} }) {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [showDropdown, setShowDropdown] = useState(false);
 
   const handleLogout = () => {
@@ -13,64 +15,80 @@ function Navbar({ onToggleSidebar = () => {} }) {
   };
 
   return (
-    <nav className="bg-white border-b border-slate-200 shadow-sm">
+    <nav className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 shadow-sm transition-colors">
       <div className="px-3 py-2 sm:px-5 sm:py-2.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <button
               type="button"
               onClick={onToggleSidebar}
-              className="inline-flex items-center justify-center p-2 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 lg:hidden"
+              className="inline-flex items-center justify-center p-2 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 lg:hidden"
               aria-label="Toggle navigation"
             >
               <Menu className="h-5 w-5" />
             </button>
-            <div className="p-1.5 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg">
-              <Shield className="h-5 w-5 text-white" />
+            <img
+              src="/secure-logo.svg"
+              alt="Secure Document Vault logo"
+              className="h-10 w-10 drop-shadow-md"
+              loading="lazy"
+            />
+            <div>
+              <h1 className="text-sm font-semibold text-slate-900 dark:text-white sm:text-base">Secure Document Vault</h1>
+              <p className="text-[11px] uppercase tracking-[0.25em] text-slate-500 dark:text-slate-400 hidden sm:block">Trusted Storage</p>
             </div>
-            <h1 className="text-sm font-semibold text-slate-900 sm:text-base">Secure Document Vault</h1>
           </div>
 
-          <div className="relative">
+          <div className="flex items-center gap-4">
             <button
-              onClick={() => setShowDropdown(!showDropdown)}
-              className="flex items-center space-x-2.5 p-2 rounded-lg hover:bg-slate-50 transition-colors"
+              onClick={toggleTheme}
+              className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700 transition-colors"
+              aria-label="Toggle theme"
             >
-              <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 flex items-center justify-center text-white text-sm font-semibold">
-                {user?.name?.charAt(0).toUpperCase()}
-              </div>
-              <div className="text-left hidden sm:block">
-                <p className="text-sm font-medium text-slate-900 leading-tight">{user?.name}</p>
-                <p className="text-xs text-slate-500 capitalize">{user?.role?.toLowerCase()}</p>
-              </div>
-              <ChevronDown className="h-4 w-4 text-slate-400" />
+              {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
             </button>
 
-            {showDropdown && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl border border-slate-200 shadow-lg z-50">
-                <div className="p-2.5 space-y-2">
-                  <div className="px-3 py-2 border border-slate-200 rounded-lg bg-slate-50">
-                    <p className="text-xs text-slate-500">Signed in as</p>
-                    <p className="text-sm font-medium text-slate-900 truncate">{user?.email}</p>
-                  </div>
-                  <Link
-                    to="/profile"
-                    className="w-full flex items-center space-x-2 px-3 py-2 text-sm text-slate-700 rounded-lg hover:bg-slate-100"
-                    onClick={() => setShowDropdown(false)}
-                  >
-                    <Settings size={16} />
-                    <span>Profile Settings</span>
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center space-x-2 px-3 py-2 text-sm text-red-600 rounded-lg hover:bg-red-50"
-                  >
-                    <LogOut size={16} />
-                    <span>Sign Out</span>
-                  </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowDropdown(!showDropdown)}
+                className="flex items-center space-x-2.5 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+              >
+                <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 flex items-center justify-center text-white text-sm font-semibold">
+                  {user?.name?.charAt(0).toUpperCase()}
                 </div>
-              </div>
-            )}
+                <div className="text-left hidden sm:block">
+                  <p className="text-sm font-medium text-slate-900 dark:text-white leading-tight">{user?.name}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">{user?.role?.toLowerCase()}</p>
+                </div>
+                <ChevronDown className="h-4 w-4 text-slate-400" />
+              </button>
+
+              {showDropdown && (
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-lg z-50">
+                  <div className="p-2.5 space-y-2">
+                    <div className="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-700/50">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Signed in as</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{user?.email}</p>
+                    </div>
+                    <Link
+                      to="/profile"
+                      className="w-full flex items-center space-x-2 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+                      onClick={() => setShowDropdown(false)}
+                    >
+                      <Settings size={16} />
+                      <span>Profile Settings</span>
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center space-x-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                    >
+                      <LogOut size={16} />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

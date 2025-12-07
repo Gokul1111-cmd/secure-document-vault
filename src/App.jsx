@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
-import { LoadingOverlayProvider } from './context/LoadingOverlayContext.jsx';
 import { ToastProvider } from './components/ui/ToastContainer.jsx';
+import { LoadingOverlayProvider } from './context/LoadingOverlayContext.jsx';
 import LoadingOverlay from './components/ui/LoadingOverlay.jsx';
 import Layout from './components/layout/Layout.jsx';
 import Login from './pages/Login.jsx';
@@ -80,10 +80,10 @@ function App() {
       <AuthProvider>
         <ToastProvider>
           <Router>
-            <LoadingOverlay />
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950">
               <AppRoutes />
             </div>
+            <LoadingOverlay />
           </Router>
         </ToastProvider>
       </AuthProvider>

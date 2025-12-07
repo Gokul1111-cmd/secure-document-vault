@@ -1,7 +1,7 @@
 function Table({ children, className = '' }) {
   return (
-    <div className="-mx-3 overflow-x-auto rounded-lg border border-slate-200 sm:mx-0 sm:rounded-xl">
-      <table className={`w-full text-left ${className}`}>
+    <div className="-mx-3 overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800 sm:mx-0 sm:rounded-xl">
+      <table className={`w-full text-left text-slate-900 dark:text-slate-100 ${className}`}>
         {children}
       </table>
     </div>
@@ -10,7 +10,7 @@ function Table({ children, className = '' }) {
 
 function TableHeader({ children, className = '' }) {
   return (
-    <thead className={`bg-slate-50 ${className}`}>
+    <thead className={`bg-slate-50 dark:bg-slate-800/60 ${className}`}>
       {children}
     </thead>
   );
@@ -18,7 +18,7 @@ function TableHeader({ children, className = '' }) {
 
 function TableBody({ children, className = '' }) {
   return (
-    <tbody className={`bg-white divide-y divide-slate-200 ${className}`}>
+    <tbody className={`bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-800 ${className}`}>
       {children}
     </tbody>
   );
@@ -29,7 +29,7 @@ function TableRow({ children, className = '', onClick }) {
   
   return (
     <tr 
-      className={`${clickableClass} ${className}`}
+      className={`${clickableClass} ${onClick ? 'dark:hover:bg-slate-800/60' : ''} ${className}`}
       onClick={onClick}
     >
       {children}
@@ -39,7 +39,7 @@ function TableRow({ children, className = '', onClick }) {
 
 function TableHead({ children, className = '' }) {
   return (
-    <th className={`px-3 py-2 text-[11px] font-medium uppercase tracking-wide text-slate-500 sm:px-5 sm:py-3 sm:text-xs ${className}`}>
+    <th className={`px-3 py-2 text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400 sm:px-5 sm:py-3 sm:text-xs ${className}`}>
       {children}
     </th>
   );
@@ -47,7 +47,7 @@ function TableHead({ children, className = '' }) {
 
 function TableCell({ children, className = '' }) {
   return (
-    <td className={`px-3 py-2 text-xs text-slate-900 sm:px-5 sm:py-3 sm:text-sm ${className}`}>
+    <td className={`px-3 py-2 text-xs text-slate-900 dark:text-slate-100 sm:px-5 sm:py-3 sm:text-sm ${className}`}>
       {children}
     </td>
   );

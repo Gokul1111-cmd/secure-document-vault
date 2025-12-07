@@ -1,49 +1,29 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL
+  || (import.meta.env.DEV ? 'http://localhost:5000/api' : 'https://secure-document-vault.onrender.com/api');
 
-// Do not force a global Content-Type; let Axios infer (JSON vs multipart)
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-});
+const apiClient = axios.create({ baseURL: API_BASE_URL });
 
-apiClient.interceptors.request.use(
-  (config) => {
+apiClient.interceptors.request.use((config) => {
     const token = localStorage.getItem('accessToken');
-    if (token) {
-      config.headers = config.headers || {};
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    // If sending FormData, remove any preset content-type so boundary is added
-    if (config.data instanceof FormData && config.headers && config.headers['Content-Type']) {
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    if (config.data instanceof FormData && config.headers['Content-Type']) {
       delete config.headers['Content-Type'];
     }
     return config;
-  },
-  (error) => Promise.reject(error)
-);
+}, (error) => Promise.reject(error));
 
-apiClient.interceptors.response.use(
-  (response) => response,
-  async (error) => {
+apiClient.interceptors.response.use((response) => response, async (error) => {
     const originalRequest = error.config;
-
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-
       try {
         const refreshToken = localStorage.getItem('refreshToken');
-        if (!refreshToken) {
-          throw new Error('No refresh token');
-        }
-
-        const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-          refreshToken,
-        });
-
+        if (!refreshToken) throw new Error('No refresh token');
+        const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken });
         localStorage.setItem('accessToken', data.data.accessToken);
         originalRequest.headers.Authorization = `Bearer ${data.data.accessToken}`;
-
         return apiClient(originalRequest);
       } catch (refreshError) {
         localStorage.removeItem('accessToken');
@@ -53,10 +33,8 @@ apiClient.interceptors.response.use(
         return Promise.reject(refreshError);
       }
     }
-
     return Promise.reject(error);
-  }
-);
+});
 
 export const authAPI = {
   register: (data) => apiClient.post('/auth/register', data),
@@ -69,16 +47,12 @@ export const authAPI = {
 };
 
 export const documentAPI = {
-  // Do NOT set Content-Type manually; let Axios add correct multipart boundary
   upload: (formData) => apiClient.post('/docs/upload', formData),
-  getAll: () => apiClient.get('/docs'),
+  // UPDATED: Now accepts params
+  getAll: (params) => apiClient.get('/docs', { params }),
   getMetadata: (id) => apiClient.get(`/docs/${id}/metadata`),
-  view: (id, pin) => apiClient.post(`/docs/${id}/view`, { pin }, {
-    responseType: 'blob',
-  }),
-  download: (id, pin) => apiClient.post(`/docs/${id}/download`, { pin }, {
-    responseType: 'blob',
-  }),
+  view: (id, pin) => apiClient.post(`/docs/${id}/view`, { pin }, { responseType: 'blob' }),
+  download: (id, pin) => apiClient.post(`/docs/${id}/download`, { pin }, { responseType: 'blob' }),
   delete: (id) => apiClient.delete(`/docs/${id}`),
 };
 
@@ -90,6 +64,7 @@ export const adminAPI = {
   resetPassword: (userId) => apiClient.post(`/admin/users/${userId}/reset-password`),
   getLogs: (params) => apiClient.get('/admin/logs', { params }),
   getAllDocuments: (params) => apiClient.get('/admin/documents', { params }),
+  deleteUser: (userId) => apiClient.delete(`/admin/users/${userId}`),
 };
 
 export default apiClient;
