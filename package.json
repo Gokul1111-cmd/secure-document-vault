@@ -5,10 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:full": "concurrently \"npm run dev\" \"npm run --prefix server dev\"",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "generate:prisma": "npm run --prefix server prisma:generate"
+    "generate:prisma": "npm run --prefix server prisma:generate",
+    "server:dev": "npm run --prefix server dev",
+    "server:start": "npm run --prefix server start",
+    "setup:local": "npm install && cd server && npm install && npm run prisma:generate"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",
