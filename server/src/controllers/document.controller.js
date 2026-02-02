@@ -15,7 +15,7 @@ const {
   getDownloadStream,
   deleteFile,
 } = require('../services/storage.service');
-const bcrypt = require('bcryptjs');
+const { verifyHash } = require('../utils/hash');
 
 // USE DISK STORAGE TO PREVENT MEMORY CRASHES
 const upload = multer({
@@ -178,7 +178,7 @@ const streamDocument = async (req, res, disposition, next) => {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) return res.status(404).json({ status: 'error', message: 'User not found' });
 
-    const isPinValid = user.viewPinHash ? await bcrypt.compare(pin, user.viewPinHash) : false;
+    const isPinValid = user.viewPinHash ? await verifyHash(pin, user.viewPinHash) : false;
     if (!isPinValid) {
       await createAuditLog({
         userId, action: `${disposition.toUpperCase()}_FAILED`, docId: id, status: 'FAILURE',

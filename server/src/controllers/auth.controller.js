@@ -1,4 +1,4 @@
-const bcrypt = require('bcryptjs');
+const { hashValue, verifyHash, verifyAndUpgradeHash } = require('../utils/hash');
 const jwt = require('jsonwebtoken');
 const { getPrismaClient } = require('../config/prisma');
 const env = require('../config/env');
@@ -35,8 +35,8 @@ const register = async (req, res, next) => {
       });
     }
 
-    const passwordHash = await bcrypt.hash(password, env.passwordSaltRounds);
-    const viewPinHash = await bcrypt.hash(pin, env.passwordSaltRounds);
+    const passwordHash = await hashValue(password);
+    const viewPinHash = await hashValue(pin);
     const user = await prisma.user.create({
       data: {
         name,
@@ -118,7 +118,12 @@ const login = async (req, res, next) => {
       });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    const isPasswordValid = await verifyAndUpgradeHash(password, user.passwordHash, async (newHash) => {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash: newHash },
+      });
+    });
 
     if (!isPasswordValid) {
       const newFailedAttempts = user.failedAttempts + 1;
@@ -226,7 +231,12 @@ const verifyPassword = async (req, res, next) => {
       });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    const isPasswordValid = await verifyAndUpgradeHash(password, user.passwordHash, async (newHash) => {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash: newHash },
+      });
+    });
 
     if (!isPasswordValid) {
       await createAuditLog({
@@ -384,7 +394,7 @@ const updatePassword = async (req, res, next) => {
     const prisma = getPrismaClient();
     const user = await prisma.user.findUnique({ where: { id: userId } });
 
-    const isPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    const isPasswordValid = await verifyHash(currentPassword, user.passwordHash);
     if (!isPasswordValid) {
       await createAuditLog({
         userId,
@@ -401,7 +411,7 @@ const updatePassword = async (req, res, next) => {
       });
     }
 
-    const newPasswordHash = await bcrypt.hash(newPassword, env.passwordSaltRounds);
+    const newPasswordHash = await hashValue(newPassword);
 
     await prisma.user.update({
       where: { id: userId },
@@ -455,7 +465,7 @@ const updatePin = async (req, res, next) => {
       });
     }
 
-    const isPinValid = await bcrypt.compare(currentPin, user.viewPinHash);
+    const isPinValid = await verifyHash(currentPin, user.viewPinHash);
     if (!isPinValid) {
       await createAuditLog({
         userId,
@@ -472,7 +482,7 @@ const updatePin = async (req, res, next) => {
       });
     }
 
-    const newPinHash = await bcrypt.hash(newPin, env.passwordSaltRounds);
+    const newPinHash = await hashValue(newPin);
 
     await prisma.user.update({
       where: { id: userId },

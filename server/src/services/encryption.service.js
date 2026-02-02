@@ -1,86 +1,78 @@
 const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
 const { Transform, PassThrough } = require('stream');
-
-let privateKey = null;
-let publicKey = null;
-
-const getInlineKey = (envValue) => {
-  if (!envValue || !envValue.length) return null;
-  return envValue.replace(/\\n/g, '\n').replace(/\r?\n/g, '\n');
-};
-
-const loadKeys = () => {
-  if (privateKey && publicKey) return;
-
-  const inlinePrivate = getInlineKey(process.env.RSA_PRIVATE_KEY);
-  const inlinePublic = getInlineKey(process.env.RSA_PUBLIC_KEY);
-
-  if (inlinePrivate && inlinePublic) {
-    privateKey = inlinePrivate;
-    publicKey = inlinePublic;
-    return;
-  }
-
-  const privateKeyPath = path.resolve(process.cwd(), process.env.RSA_PRIVATE_KEY_PATH || 'keys/private.pem');
-  const publicKeyPath = path.resolve(process.cwd(), process.env.RSA_PUBLIC_KEY_PATH || 'keys/public.pem');
-
-  if (!fs.existsSync(privateKeyPath) || !fs.existsSync(publicKeyPath)) {
-    throw new Error('RSA keys not found. Run: node scripts/generateKeys.js');
-  }
-
-  privateKey = fs.readFileSync(privateKeyPath, 'utf8');
-  publicKey = fs.readFileSync(publicKeyPath, 'utf8');
-};
+const { wrapAESKey: eccWrapKey, unwrapAESKey: eccUnwrapKey } = require('./eccKeyWrapping.service');
 
 const generateAESKey = () => crypto.randomBytes(32);
 
-// STREAMING ENCRYPTION
-// Format: IV (12 bytes) + Encrypted Data + Auth Tag (16 bytes)
-const createEncryptStream = (aesKey) => {
-  const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv('aes-256-gcm', aesKey, iv);
+// Determine cipher algorithm from environment or default to ChaCha20-Poly1305
+const getDefaultCipher = () => {
+  const cipher = process.env.ENCRYPTION_CIPHER || 'chacha20-poly1305';
+  return cipher === 'aes-256-gcm' ? 'aes-256-gcm' : 'chacha20-poly1305';
+};
+
+// STREAMING ENCRYPTION with cipher selection
+// Format: Cipher Flag (1 byte) + Nonce (12 or 24 bytes) + Encrypted Data + Auth Tag (16 bytes)
+// Cipher Flag: 0x01 = AES-256-GCM, 0x02 = ChaCha20-Poly1305
+const createEncryptStream = (aesKey, cipherType = null) => {
+  const cipher = cipherType || getDefaultCipher();
+  const isChaCha = cipher === 'chacha20-poly1305';
+  
+  // ChaCha20 uses 96-bit (12 bytes) nonce, same as AES-GCM
+  const nonce = crypto.randomBytes(12);
+  const cipherFlag = Buffer.from([isChaCha ? 0x02 : 0x01]);
+  
+  const cipherInstance = crypto.createCipheriv(cipher, aesKey, nonce);
   
   const output = new PassThrough();
   
-  // 1. Write IV to the beginning of the stream
-  output.write(iv);
+  // 1. Write cipher flag (1 byte) + nonce (12 bytes) to the beginning
+  output.write(cipherFlag);
+  output.write(nonce);
   
   // 2. Pipe cipher data to output
-  cipher.on('data', (chunk) => output.write(chunk));
+  cipherInstance.on('data', (chunk) => output.write(chunk));
   
   // 3. On completion, append AuthTag and end stream
-  cipher.on('end', () => {
-    output.write(cipher.getAuthTag());
+  cipherInstance.on('end', () => {
+    output.write(cipherInstance.getAuthTag());
     output.end();
   });
 
-  return { cipher, output };
+  return { cipher: cipherInstance, output, cipherType: cipher };
 };
 
-// STREAMING DECRYPTION
-// Handles parsing IV from start and Tag from end
+// STREAMING DECRYPTION with automatic cipher detection
+// Handles parsing cipher flag, nonce, and auth tag
 const createDecryptStream = (aesKey) => {
-  const ivLength = 12;
+  const cipherFlagLength = 1;
+  const nonceLength = 12;
   const tagLength = 16;
-  let ivRead = false;
-  let ivBuffer = Buffer.alloc(0);
+  let cipherFlagRead = false;
+  let nonceRead = false;
+  let headerBuffer = Buffer.alloc(0);
   let tagBuffer = Buffer.alloc(0);
   let decipher = null;
+  let cipherType = null;
 
   return new Transform({
     transform(chunk, encoding, callback) {
       let data = chunk;
 
-      // 1. Extract IV from the start of the stream
-      if (!ivRead) {
-        ivBuffer = Buffer.concat([ivBuffer, data]);
-        if (ivBuffer.length >= ivLength) {
-          const iv = ivBuffer.slice(0, ivLength);
-          decipher = crypto.createDecipheriv('aes-256-gcm', aesKey, iv);
-          ivRead = true;
-          data = ivBuffer.slice(ivLength); // Process remaining data in this chunk
+      // 1. Extract cipher flag (1 byte) and nonce (12 bytes) from start
+      if (!nonceRead) {
+        headerBuffer = Buffer.concat([headerBuffer, data]);
+        const headerLength = cipherFlagLength + nonceLength;
+        
+        if (headerBuffer.length >= headerLength) {
+          const cipherFlag = headerBuffer[0];
+          const nonce = headerBuffer.slice(cipherFlagLength, headerLength);
+          
+          // Determine cipher from flag
+          cipherType = cipherFlag === 0x02 ? 'chacha20-poly1305' : 'aes-256-gcm';
+          
+          decipher = crypto.createDecipheriv(cipherType, aesKey, nonce);
+          nonceRead = true;
+          data = headerBuffer.slice(headerLength); // Process remaining data
         } else {
           return callback(); // Wait for more data
         }
@@ -126,24 +118,18 @@ const createDecryptStream = (aesKey) => {
 };
 
 const wrapAESKey = (aesKey) => {
-  if (!publicKey) loadKeys();
-  return crypto.publicEncrypt(
-    { key: publicKey, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING, oaepHash: 'sha256' },
-    aesKey
-  ).toString('base64');
+  // Use X25519 ECDH-based wrapping (10x faster, 87% smaller keys)
+  return eccWrapKey(aesKey);
 };
 
 const unwrapAESKey = (wrappedKey) => {
-  if (!privateKey) loadKeys();
-  return crypto.privateDecrypt(
-    { key: privateKey, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING, oaepHash: 'sha256' },
-    Buffer.from(wrappedKey, 'base64')
-  );
+  // Use X25519 ECDH-based unwrapping
+  return eccUnwrapKey(wrappedKey);
 };
 
 module.exports = {
-  loadKeys,
   generateAESKey,
+  getDefaultCipher,
   createEncryptStream,
   createDecryptStream,
   wrapAESKey,

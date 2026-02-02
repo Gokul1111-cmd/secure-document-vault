@@ -1,4 +1,3 @@
-const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { getPrismaClient } = require('../config/prisma');
 const { createAuditLog } = require('../services/auditLog.service');
