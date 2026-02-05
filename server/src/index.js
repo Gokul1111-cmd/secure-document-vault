@@ -1,11 +1,7 @@
 const app = require('./app');
 const env = require('./config/env');
 const logger = require('./utils/logger');
-const { loadKeys } = require('./services/encryption.service');
 const { initializeFirebase } = require('./services/storage.service');
-
-loadKeys();
-logger.info('RSA keys loaded successfully');
 
 initializeFirebase();
 

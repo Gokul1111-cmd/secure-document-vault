@@ -1,17 +1,17 @@
 const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
+const { hashValue } = require('../src/utils/hash');
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Seeding database...');
+  console.log('🌱 Seeding database...\n');
 
   const adminExists = await prisma.user.findUnique({
     where: { email: 'admin@securedocs.com' },
   });
 
   if (!adminExists) {
-    const passwordHash = await bcrypt.hash('Admin@123', 12);
+    const passwordHash = await hashValue('Admin@123');
     await prisma.user.create({
       data: {
         name: 'System Admin',
@@ -21,32 +21,15 @@ async function main() {
         status: 'ACTIVE',
       },
     });
-    console.log('✓ Admin user created: admin@securedocs.com / Admin@123');
+    console.log('✅ Admin user created:');
+    console.log('   Email: admin@securedocs.com');
+    console.log('   Password: Admin@123');
+    console.log('   Role: ADMIN\n');
   } else {
-    console.log('✓ Admin user already exists');
+    console.log('ℹ️  Admin user already exists\n');
   }
 
-  const userExists = await prisma.user.findUnique({
-    where: { email: 'user@securedocs.com' },
-  });
-
-  if (!userExists) {
-    const passwordHash = await bcrypt.hash('User@123', 12);
-    await prisma.user.create({
-      data: {
-        name: 'Test User',
-        email: 'user@securedocs.com',
-        passwordHash,
-        role: 'USER',
-        status: 'ACTIVE',
-      },
-    });
-    console.log('✓ Test user created: user@securedocs.com / User@123');
-  } else {
-    console.log('✓ Test user already exists');
-  }
-
-  console.log('Seeding completed successfully.');
+  console.log('✅ Seeding completed successfully.');
 }
 
 main()
