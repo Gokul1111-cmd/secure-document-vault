@@ -136,7 +136,6 @@ function Login() {
                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
                     </div>
-                    <p className="text-[10px] text-right mt-1 text-neon-cyan/80 cursor-pointer hover:text-neon-cyan">Lost your key?</p>
                 </div>
 
                 {/* CTA Button */}

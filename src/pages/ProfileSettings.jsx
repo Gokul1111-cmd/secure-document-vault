@@ -25,21 +25,21 @@ function ProfileSettings() {
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       const response = await authAPI.updateProfile({
         name: formData.name,
         email: formData.email
       });
-      
+
       // Update user in local storage
       const updatedUser = response.data.data;
       const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
       const newUser = { ...currentUser, ...updatedUser };
       localStorage.setItem('user', JSON.stringify(newUser));
-      
+
       showToast('Profile updated successfully', 'success');
-      
+
       // Reload page to reflect changes
       setTimeout(() => window.location.reload(), 1000);
     } catch (error) {
@@ -51,24 +51,24 @@ function ProfileSettings() {
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
-    
+
     if (formData.newPassword !== formData.confirmPassword) {
       showToast('Passwords do not match', 'error');
       return;
     }
-    
+
     if (formData.newPassword.length < 6) {
       showToast('Password must be at least 6 characters', 'error');
       return;
     }
-    
+
     setLoading(true);
     try {
       await authAPI.updatePassword({
         currentPassword: formData.currentPassword,
         newPassword: formData.newPassword
       });
-      
+
       showToast('Password changed successfully', 'success');
       setFormData({ ...formData, currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (error) {
@@ -80,24 +80,24 @@ function ProfileSettings() {
 
   const handlePinChange = async (e) => {
     e.preventDefault();
-    
+
     if (!/^\d{6}$/.test(formData.newPin)) {
       showToast('PIN must be exactly 6 digits', 'error');
       return;
     }
-    
+
     if (formData.newPin !== formData.confirmPin) {
       showToast('PINs do not match', 'error');
       return;
     }
-    
+
     setLoading(true);
     try {
       await authAPI.updatePin({
         currentPin: formData.currentPin,
         newPin: formData.newPin
       });
-      
+
       showToast('PIN changed successfully', 'success');
       setFormData({ ...formData, currentPin: '', newPin: '', confirmPin: '' });
     } catch (error) {
@@ -126,9 +126,9 @@ function ProfileSettings() {
                 {user?.name?.charAt(0).toUpperCase()}
               </div>
               <div>
-                <h3 className="text-base font-semibold text-slate-900 sm:text-lg">{user?.name}</h3>
-                <p className="text-xs text-slate-600 sm:text-sm">{user?.email}</p>
-                <p className="mt-1 text-xs capitalize text-slate-500">Role: {user?.role?.toLowerCase()}</p>
+                <h3 className="text-base font-bold text-slate-900 sm:text-lg">{user?.name}</h3>
+                <p className="text-xs text-slate-700 dark:text-slate-300 font-medium">{user?.email}</p>
+                <p className="mt-1 text-xs capitalize text-slate-600 dark:text-slate-400 font-bold">Role: {user?.role?.toLowerCase()}</p>
               </div>
             </div>
 
@@ -140,7 +140,7 @@ function ProfileSettings() {
                 icon={<User size={18} />}
                 placeholder="Your full name"
               />
-              
+
               <Input
                 label="Email Address"
                 type="email"
@@ -187,7 +187,7 @@ function ProfileSettings() {
               icon={<Lock size={18} />}
               placeholder="Enter current password"
             />
-            
+
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Input
                 label="New Password"
@@ -197,7 +197,7 @@ function ProfileSettings() {
                 icon={<Lock size={18} />}
                 placeholder="Minimum 6 characters"
               />
-              
+
               <Input
                 label="Confirm New Password"
                 type="password"
@@ -245,7 +245,7 @@ function ProfileSettings() {
               icon={<Shield size={18} />}
               placeholder="Current 6-digit PIN"
             />
-            
+
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Input
                 label="New PIN"
@@ -256,7 +256,7 @@ function ProfileSettings() {
                 icon={<Shield size={18} />}
                 placeholder="New 6-digit PIN"
               />
-              
+
               <Input
                 label="Confirm New PIN"
                 type="text"

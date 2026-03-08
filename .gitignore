@@ -23,3 +23,19 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Server env files (contain DB credentials, JWT secrets, API keys)
+server/.env
+server/.env.local
+server/.env.render
+
+# Encryption private keys — must never be committed
+server/keys/
+
+# Uploaded encrypted files
+server/uploads/
+
+# Debug artifacts
+server/access.token.txt
+server/error-debug.log
+

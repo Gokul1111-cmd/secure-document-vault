@@ -3,37 +3,63 @@ import axios from 'axios';
 const API_BASE_URL = import.meta.env.VITE_API_URL
   || (import.meta.env.DEV ? 'http://localhost:5000/api' : 'https://secure-document-vault.onrender.com/api');
 
-const apiClient = axios.create({ baseURL: API_BASE_URL });
+// Main API client with authentication
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 30000, // 30 second timeout
+});
+
+// Public API client without authentication (for shared documents)
+const publicClient = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 30000,
+});
 
 apiClient.interceptors.request.use((config) => {
-    const token = localStorage.getItem('accessToken');
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    if (config.data instanceof FormData && config.headers['Content-Type']) {
-      delete config.headers['Content-Type'];
-    }
-    return config;
+  const token = localStorage.getItem('accessToken');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (config.data instanceof FormData && config.headers['Content-Type']) {
+    delete config.headers['Content-Type'];
+  }
+  return config;
 }, (error) => Promise.reject(error));
 
 apiClient.interceptors.response.use((response) => response, async (error) => {
-    const originalRequest = error.config;
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (!refreshToken) throw new Error('No refresh token');
-        const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken });
-        localStorage.setItem('accessToken', data.data.accessToken);
-        originalRequest.headers.Authorization = `Bearer ${data.data.accessToken}`;
-        return apiClient(originalRequest);
-      } catch (refreshError) {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
-        return Promise.reject(refreshError);
+  const originalRequest = error.config;
+
+  // Log API errors for debugging
+  if (error.response) {
+    console.error(`[API Error] ${originalRequest.method?.toUpperCase()} ${originalRequest.url}:`, {
+      status: error.response.status,
+      message: error.response.data?.message,
+      data: error.response.data
+    });
+  } else if (error.request) {
+    console.error(`[API Error] No response for ${originalRequest.method?.toUpperCase()} ${originalRequest.url}`);
+  }
+
+  if (error.response?.status === 401 && !originalRequest._retry) {
+    originalRequest._retry = true;
+    try {
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (!refreshToken) {
+        console.warn('[API] No refresh token found, redirecting to login');
+        throw new Error('No refresh token');
       }
+      const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken });
+      localStorage.setItem('accessToken', data.data.accessToken);
+      originalRequest.headers.Authorization = `Bearer ${data.data.accessToken}`;
+      return apiClient(originalRequest);
+    } catch (refreshError) {
+      console.error('[API] Token refresh failed, clearing session');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+      return Promise.reject(refreshError);
     }
-    return Promise.reject(error);
+  }
+  return Promise.reject(error);
 });
 
 export const authAPI = {
@@ -54,6 +80,12 @@ export const documentAPI = {
   view: (id, pin) => apiClient.post(`/docs/${id}/view`, { pin }, { responseType: 'blob' }),
   download: (id, pin) => apiClient.post(`/docs/${id}/download`, { pin }, { responseType: 'blob' }),
   delete: (id) => apiClient.delete(`/docs/${id}`),
+  createShare: (id, options) => apiClient.post(`/docs/${id}/share`, options),
+  accessShared: (token, password, action = 'download') => publicClient.post(`/docs/shared/${token}?action=${action}`, { password }, { responseType: 'blob' }),
+  getShareLogs: (params) => apiClient.get('/docs/shares/logs', { params }),
+  bulkDeleteShares: (ids) => apiClient.delete('/docs/shares/bulk', { data: { ids } }),
+  revokeShare: (id) => apiClient.post(`/docs/shares/${id}/revoke`),
+  extendShare: (id, newExpiresAt) => apiClient.post(`/docs/shares/${id}/extend`, { newExpiresAt }),
 };
 
 export const adminAPI = {
@@ -65,6 +97,14 @@ export const adminAPI = {
   getLogs: (params) => apiClient.get('/admin/logs', { params }),
   getAllDocuments: (params) => apiClient.get('/admin/documents', { params }),
   deleteUser: (userId) => apiClient.delete(`/admin/users/${userId}`),
+};
+
+export const folderAPI = {
+  create: (data) => apiClient.post('/folders', data),
+  getContents: (parentId) => apiClient.get('/folders/contents', { params: { parentId } }),
+  rename: (id, name) => apiClient.patch(`/folders/${id}`, { name }),
+  delete: (id) => apiClient.delete(`/folders/${id}`),
+  move: (data) => apiClient.post('/folders/move', data),
 };
 
 export default apiClient;

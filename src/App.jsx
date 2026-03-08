@@ -12,39 +12,56 @@ import AuditLogs from './pages/AuditLogs.jsx';
 import ProfileSettings from './pages/ProfileSettings.jsx';
 import UserManagement from './pages/UserManagement.jsx';
 import AllDocuments from './pages/AllDocuments.jsx';
+import MyDocuments from './pages/MyDocuments.jsx';
+import SharedLinks from './pages/SharedLinks.jsx';
+import SharedDocument from './pages/SharedDocument.jsx';
 import ErrorPage from './pages/ErrorPage.jsx';
 
 function ProtectedRoute({ children, adminOnly = false }) {
   const { user, isAuthenticated } = useAuth();
-  
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
-  
+
   if (adminOnly && user?.role?.toUpperCase() !== 'ADMIN') {
     return <ErrorPage type="access-denied" />;
   }
-  
+
+  return children;
+}
+
+// Blocks admins from accessing regular user pages
+function UserOnlyRoute({ children }) {
+  const { user } = useAuth();
+  const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
+  if (isAdmin) return <Navigate to="/admin" replace />;
   return children;
 }
 
 function AppRoutes() {
-  const { isAuthenticated } = useAuth();
-  
+  const { user, isAuthenticated } = useAuth();
+  const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
+
   return (
     <Routes>
+      {/* Public route for shared documents */}
+      <Route path="/share/:token" element={<SharedDocument />} />
+
       <Route path="/login" element={
-        isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />
+        isAuthenticated ? <Navigate to={isAdmin ? '/admin' : '/dashboard'} replace /> : <Login />
       } />
       <Route path="/register" element={
-        isAuthenticated ? <Navigate to="/dashboard" replace /> : <Register />
+        isAuthenticated ? <Navigate to={isAdmin ? '/admin' : '/dashboard'} replace /> : <Register />
       } />
       <Route path="/" element={
         <ProtectedRoute>
           <Layout />
         </ProtectedRoute>
       }>
-        <Route path="dashboard" element={<DashboardUser />} />
+        <Route path="dashboard" element={<UserOnlyRoute><DashboardUser /></UserOnlyRoute>} />
+        <Route path="my-documents" element={<UserOnlyRoute><MyDocuments /></UserOnlyRoute>} />
+        <Route path="shared-links" element={<UserOnlyRoute><SharedLinks /></UserOnlyRoute>} />
         <Route path="profile" element={<ProfileSettings />} />
         <Route path="admin" element={
           <ProtectedRoute adminOnly={true}>

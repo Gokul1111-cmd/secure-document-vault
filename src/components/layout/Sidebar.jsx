@@ -1,13 +1,15 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { Home, Settings, FileText, Users, Activity, X } from 'lucide-react';
+import { Home, Settings, FileText, Users, Activity, X, Share2 } from 'lucide-react';
 
-function Sidebar({ isMobileOpen = false, onClose = () => {} }) {
+function Sidebar({ isMobileOpen = false, onClose = () => { } }) {
   const { user } = useAuth();
   const location = useLocation();
 
   const userNavItems = [
-    { to: '/dashboard', icon: Home, label: 'Dashboard' }
+    { to: '/dashboard', icon: Home, label: 'Dashboard' },
+    { to: '/my-documents', icon: FileText, label: 'My Documents' },
+    { to: '/shared-links', icon: Share2, label: 'Shared Links' }
   ];
 
   const adminNavItems = [
@@ -18,20 +20,18 @@ function Sidebar({ isMobileOpen = false, onClose = () => {} }) {
   ];
 
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'admin';
-  const navItems = isAdmin ? [...userNavItems, ...adminNavItems] : userNavItems;
+  const navItems = isAdmin ? adminNavItems : userNavItems;
 
   return (
     <>
       <div
-        className={`fixed inset-0 z-40 bg-slate-900/40 transition-opacity lg:hidden ${
-          isMobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
+        className={`fixed inset-0 z-40 bg-slate-900/40 transition-opacity lg:hidden ${isMobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
         onClick={onClose}
       />
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-60 sm:w-56 lg:w-56 xl:w-60 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-sm transform transition-transform duration-200 lg:static lg:translate-x-0 lg:shadow-none ${
-          isMobileOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 w-60 sm:w-56 lg:w-56 xl:w-60 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-sm transform transition-transform duration-200 lg:static lg:translate-x-0 lg:shadow-none ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
         aria-label="Sidebar navigation"
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800 lg:hidden">
@@ -56,11 +56,10 @@ function Sidebar({ isMobileOpen = false, onClose = () => {} }) {
                   key={item.to}
                   to={item.to}
                   onClick={onClose}
-                  className={`flex items-center space-x-3 rounded-lg px-3 py-2 text-sm transition-all duration-200 ${
-                    isActive
-                      ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 dark:from-blue-500/20 dark:to-blue-500/10 dark:text-blue-100'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white'
-                  }`}
+                  className={`flex items-center space-x-3 rounded-lg px-3 py-2 text-sm transition-all duration-200 ${isActive
+                    ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 dark:from-blue-500/20 dark:to-blue-500/10 dark:text-blue-100'
+                    : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white'
+                    }`}
                 >
                   <Icon size={16} className={isActive ? 'text-blue-600 dark:text-blue-300' : ''} />
                   <span className="font-medium leading-tight">{item.label}</span>

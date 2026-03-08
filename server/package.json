@@ -5,9 +5,11 @@
   "scripts": {
     "dev": "cross-env NODE_ENV=development nodemon src/index.js",
     "start": "node src/index.js",
+    "generate:keys": "node scripts/generateKeys.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "node prisma/seed.js",
+    "users:reset": "node scripts/reset-users.js",
     "db:push": "prisma db push",
     "test": "echo \"No test suite configured\" && exit 0"
   },

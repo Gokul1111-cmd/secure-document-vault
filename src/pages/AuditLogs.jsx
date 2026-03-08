@@ -19,6 +19,9 @@ function AuditLogs() {
   const [selectedDateRange, setSelectedDateRange] = useState('all');
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalLogs, setTotalLogs] = useState(0);
+  const LOGS_PER_PAGE = 10;
   const [stats, setStats] = useState({
     total: 0,
     successful: 0,
@@ -33,12 +36,19 @@ function AuditLogs() {
       return;
     }
     fetchAuditLogs();
-  }, [user, filterStatus]);
+  }, [user, filterStatus, currentPage]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus, searchTerm]);
 
   const fetchAuditLogs = async () => {
     try {
-      // Fetch real audit logs from API
-      const params = { limit: 1000 };
+      setLoading(true);
+      // Fetch paginated audit logs from API
+      const offset = (currentPage - 1) * LOGS_PER_PAGE;
+      const params = { limit: LOGS_PER_PAGE, offset };
       if (filterStatus !== 'all') params.status = filterStatus.toUpperCase();
       
       const response = await adminAPI.getLogs(params);
@@ -54,11 +64,16 @@ function AuditLogs() {
       }));
       
       setLogs(logsData);
+      setTotalLogs(response.data.data.total);
+      
+      // Fetch stats separately (all logs for statistics)
+      const statsResponse = await adminAPI.getLogs({ limit: 10000 });
+      const allLogs = statsResponse.data.data.logs;
       setStats({
-        total: logsData.length,
-        successful: logsData.filter(l => l.status === 'success').length,
-        failed: logsData.filter(l => l.status === 'failure').length,
-        uniqueUsers: new Set(logsData.map(l => l.user)).size
+        total: allLogs.length,
+        successful: allLogs.filter(l => l.status === 'SUCCESS').length,
+        failed: allLogs.filter(l => l.status === 'FAILURE').length,
+        uniqueUsers: new Set(allLogs.map(l => l.user?.email || 'System')).size
       });
     } catch (error) {
       console.error('Failed to fetch audit logs:', error);
@@ -73,10 +88,17 @@ function AuditLogs() {
                          log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          log.resource.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = filterStatus === 'all' || log.status === filterStatus;
-    
-    return matchesSearch && matchesStatus;
+    return matchesSearch;
   });
+
+  const totalPages = Math.ceil(totalLogs / LOGS_PER_PAGE);
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   const getStatusBadge = (status) => {
     const styles = {
@@ -244,7 +266,7 @@ function AuditLogs() {
       {/* Audit Logs Table */}
       <Card>
         <Card.Header>
-          <Card.Title>Activity Logs ({filteredLogs.length} events)</Card.Title>
+          <Card.Title>Activity Logs (Showing {filteredLogs.length} of {totalLogs} events - Page {currentPage} of {totalPages})</Card.Title>
         </Card.Header>
         <Card.Content>
           <Table>
@@ -306,6 +328,66 @@ function AuditLogs() {
             <div className="py-10 text-center text-slate-500 dark:text-slate-400">
               <Activity className="mx-auto mb-3 h-10 w-10 text-slate-300" />
               <p className="text-sm sm:text-base">No audit logs found matching your criteria.</p>
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="mt-6 flex items-center justify-between border-t border-slate-200 dark:border-slate-700 pt-4">
+              <div className="text-sm text-slate-600 dark:text-slate-400">
+                Showing {((currentPage - 1) * LOGS_PER_PAGE) + 1} to {Math.min(currentPage * LOGS_PER_PAGE, totalLogs)} of {totalLogs} results
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1"
+                >
+                  Previous
+                </Button>
+                
+                {/* Page Numbers */}
+                <div className="flex gap-1">
+                  {[...Array(Math.min(5, totalPages))].map((_, idx) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = idx + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = idx + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + idx;
+                    } else {
+                      pageNum = currentPage - 2 + idx;
+                    }
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                          currentPage === pageNum
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1"
+                >
+                  Next
+                </Button>
+              </div>
             </div>
           )}
         </Card.Content>

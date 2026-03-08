@@ -41,10 +41,10 @@ function AllDocuments() {
       try {
         // Calculate offset for backend (backend uses limit/offset, not page)
         const offset = (page - 1) * ITEMS_PER_PAGE;
-        
-        const documentsResponse = await adminAPI.getAllDocuments({ 
-          limit: ITEMS_PER_PAGE, 
-          offset: offset 
+
+        const documentsResponse = await adminAPI.getAllDocuments({
+          limit: ITEMS_PER_PAGE,
+          offset: offset
         });
         const docsData = documentsResponse.data.data;
 
@@ -54,7 +54,7 @@ function AllDocuments() {
           totalSize: docsData.totalSize,
           totalDownloads: docsData.totalDownloads,
         });
-        
+
         // Calculate total pages based on total count from backend
         setTotalPages(Math.ceil(docsData.total / ITEMS_PER_PAGE));
 
@@ -149,7 +149,7 @@ function AllDocuments() {
                   icon={<Search size={18} />}
                   className="w-full sm:max-w-xs"
                 />
-                <p className="text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
+                <p className="text-xs text-slate-600 dark:text-slate-400 font-medium sm:text-sm">
                   Showing page {page} of {totalPages}
                 </p>
               </div>
@@ -160,7 +160,7 @@ function AllDocuments() {
           <Card>
             <Card.Header className="space-y-1">
               <Card.Title>All Documents</Card.Title>
-              <p className="text-xs text-slate-500 dark:text-slate-400 sm:text-sm">Showing {filteredDocuments.length} documents on this page.</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400 font-medium sm:text-sm">Showing {filteredDocuments.length} documents on this page.</p>
             </Card.Header>
             <Card.Content>
               <Table>
@@ -181,8 +181,8 @@ function AllDocuments() {
                         <div className="flex items-start space-x-3">
                           <FileText className="mt-0.5 h-5 w-5 text-blue-600" />
                           <div>
-                            <p className="text-sm font-medium text-slate-900 dark:text-white sm:text-base">{doc.fileName}</p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">{doc.mimeType}</p>
+                            <p className="text-sm font-bold text-slate-900 dark:text-white sm:text-base">{doc.fileName}</p>
+                            <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">{doc.mimeType}</p>
                           </div>
                         </div>
                       </Table.Cell>
@@ -197,10 +197,10 @@ function AllDocuments() {
                       </Table.Cell>
                       <Table.Cell>
                         <div className="text-xs text-slate-600 dark:text-slate-400 sm:text-sm">
-                          <div className="font-medium text-slate-900 dark:text-white">
+                          <div className="font-bold text-slate-900 dark:text-white">
                             {new Date(doc.createdAt).toLocaleDateString()}
                           </div>
-                          <div className="text-slate-500 dark:text-slate-500">
+                          <div className="text-slate-600 dark:text-slate-400 font-medium">
                             {new Date(doc.createdAt).toLocaleTimeString()}
                           </div>
                         </div>
@@ -222,7 +222,7 @@ function AllDocuments() {
               </Table>
 
               {filteredDocuments.length === 0 && (
-                <div className="text-center py-10 text-slate-500">
+                <div className="text-center py-10 text-slate-600">
                   <FileText className="h-10 w-10 mx-auto mb-3 text-slate-300" />
                   <p className="text-sm sm:text-base">No documents found.</p>
                 </div>
@@ -230,23 +230,23 @@ function AllDocuments() {
 
               {/* Pagination Controls */}
               <div className="flex items-center justify-between mt-4 border-t border-slate-200 dark:border-slate-700 pt-4">
-                 <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                 >
-                    <ChevronLeft size={16} className="mr-1" /> Previous
-                 </Button>
-                 <span className="text-sm text-slate-600 dark:text-slate-400">Page {page} of {totalPages}</span>
-                 <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                    disabled={page >= totalPages}
-                 >
-                    Next <ChevronRight size={16} className="ml-1" />
-                 </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  <ChevronLeft size={16} className="mr-1" /> Previous
+                </Button>
+                <span className="text-sm text-slate-600 dark:text-slate-400">Page {page} of {totalPages}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                >
+                  Next <ChevronRight size={16} className="ml-1" />
+                </Button>
               </div>
             </Card.Content>
           </Card>

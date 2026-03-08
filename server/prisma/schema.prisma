@@ -9,60 +9,106 @@ datasource db {
 }
 
 model User {
-  id              String   @id @default(uuid())
-  name            String
-  email           String   @unique
-  passwordHash    String   @map("password_hash")
-  viewPinHash     String?  @map("view_pin_hash")
-  role            Role     @default(USER)
-  status          UserStatus @default(ACTIVE)
-  failedAttempts  Int      @default(0) @map("failed_attempts")
-  lastLogin       DateTime? @map("last_login")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  id             String     @id @default(uuid())
+  name           String
+  email          String     @unique
+  passwordHash   String     @map("password_hash")
+  viewPinHash    String?    @map("view_pin_hash")
+  role           Role       @default(USER)
+  status         UserStatus @default(ACTIVE)
+  failedAttempts Int        @default(0) @map("failed_attempts")
+  lastLogin      DateTime?  @map("last_login")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
 
-  documents       Document[]
-  logs            AuditLog[]
-  passwordResets  PasswordReset[]
+  documents      Document[]
+  folders        Folder[]
+  logs           AuditLog[]
+  passwordResets PasswordReset[]
 
   @@map("users")
 }
 
 model Document {
-  id                String   @id @default(uuid())
-  ownerUserId       String   @map("owner_user_id")
-  fileName          String   @map("file_name")
-  fileSize          Int      @map("file_size")
-  mimeType          String   @map("mime_type")
-  storagePath       String   @map("storage_path")
-  encryptedAesKey   String   @map("encrypted_aes_key") @db.Text
-  downloadCount     Int      @default(0) @map("download_count")
-  lastEditedAt      DateTime @default(now()) @map("last_edited_at")
-  lastDownloadAt    DateTime? @map("last_download_at")
-  sharedStatus      Boolean  @default(false) @map("shared_status")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
+  id              String    @id @default(uuid())
+  ownerUserId     String    @map("owner_user_id")
+  fileName        String    @map("file_name")
+  fileSize        Int       @map("file_size")
+  mimeType        String    @map("mime_type")
+  storagePath     String    @map("storage_path")
+  encryptedAesKey String    @map("encrypted_aes_key") @db.Text
+  downloadCount   Int       @default(0) @map("download_count")
+  lastEditedAt    DateTime  @default(now()) @map("last_edited_at")
+  lastDownloadAt  DateTime? @map("last_download_at")
+  sharedStatus    Boolean   @default(false) @map("shared_status")
+  folderId        String?   @map("folder_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
-  owner             User     @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
-  logs              AuditLog[]
+  owner  User            @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  folder Folder?         @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  logs   AuditLog[]
+  shares DocumentShare[]
 
   @@index([ownerUserId])
+  @@index([folderId])
   @@map("documents")
 }
 
-model AuditLog {
-  id          String   @id @default(uuid())
-  userId      String?  @map("user_id")
-  action      String
-  docId       String?  @map("doc_id")
-  ipAddr      String?  @map("ip_addr")
-  userAgent   String?  @map("user_agent") @db.Text
-  status      LogStatus @default(SUCCESS)
-  message     String?  @db.Text
-  timestamp   DateTime @default(now())
+model Folder {
+  id           String     @id @default(uuid())
+  name         String
+  ownerUserId  String     @map("owner_user_id")
+  parentId     String?    @map("parent_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
 
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  document    Document? @relation(fields: [docId], references: [id], onDelete: SetNull)
+  owner        User       @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  parent       Folder?    @relation("Subfolders", fields: [parentId], references: [id], onDelete: Cascade)
+  subfolders   Folder[]   @relation("Subfolders")
+  documents    Document[]
+
+  @@index([ownerUserId])
+  @@index([parentId])
+  @@map("folders")
+}
+
+model DocumentShare {
+  id            String   @id @default(uuid())
+  documentId    String   @map("document_id")
+  ownerUserId   String   @map("owner_user_id")
+  shareToken    String   @unique @map("share_token")
+  sharePassword String?  @map("share_password")
+  expiresAt     DateTime @map("expires_at")
+  accessCount   Int      @default(0) @map("access_count")
+  maxAccess     Int?     @map("max_access")
+  isActive      Boolean  @default(true) @map("is_active")
+  allowDownload Boolean  @default(false) @map("allow_download")
+  burnAfterRead Boolean  @default(false) @map("burn_after_read")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  document Document             @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  events   DocumentShareEvent[]
+
+  @@index([documentId])
+  @@index([shareToken])
+  @@index([expiresAt])
+  @@map("document_shares")
+}
+
+model AuditLog {
+  id        String    @id @default(uuid())
+  userId    String?   @map("user_id")
+  action    String
+  docId     String?   @map("doc_id")
+  ipAddr    String?   @map("ip_addr")
+  userAgent String?   @map("user_agent") @db.Text
+  status    LogStatus @default(SUCCESS)
+  message   String?   @db.Text
+  timestamp DateTime  @default(now())
+
+  user     User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  document Document? @relation(fields: [docId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([docId])
@@ -71,18 +117,33 @@ model AuditLog {
 }
 
 model PasswordReset {
-  id          String   @id @default(uuid())
-  userId      String   @map("user_id")
-  tokenHash   String   @unique @map("token_hash")
-  expiresAt   DateTime @map("expires_at")
-  used        Boolean  @default(false)
-  createdAt   DateTime @default(now()) @map("created_at")
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])
   @@map("password_resets")
+}
+
+model DocumentShareEvent {
+  id        String         @id @default(uuid())
+  shareId   String         @map("share_id")
+  eventType ShareEventType @map("event_type")
+  ipAddress String?        @map("ip_address")
+  userAgent String?        @map("user_agent") @db.Text
+  timestamp DateTime       @default(now())
+
+  share DocumentShare @relation(fields: [shareId], references: [id], onDelete: Cascade)
+
+  @@index([shareId])
+  @@index([timestamp])
+  @@map("document_share_events")
 }
 
 enum Role {
@@ -100,4 +161,13 @@ enum LogStatus {
   SUCCESS
   FAILURE
   WARNING
+}
+
+enum ShareEventType {
+  LINK_OPENED
+  PASSWORD_SUCCESS
+  PASSWORD_FAIL
+  VIEWED
+  DOWNLOADED
+  BLOCKED
 }

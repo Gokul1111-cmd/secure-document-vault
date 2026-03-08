@@ -17,6 +17,12 @@ function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+      if (formData.password !== formData.confirmPassword) {
+         showToast('Password and confirm password do not match.', 'error');
+         return;
+      }
+
     setLoading(true);
     try {
       const result = await register({
@@ -101,13 +107,23 @@ function Register() {
                      </div>
                   </div>
                   <div className="space-y-1">
-                     <label className="text-[10px] text-neon-cyan uppercase tracking-wider font-bold">6-Digit PIN</label>
+                     <label className="text-[10px] text-neon-cyan uppercase tracking-wider font-bold">Confirm Password</label>
                      <div className="relative">
-                        <Shield className="absolute left-3 top-3 text-slate-500" size={16} />
-                        <input type="text" inputMode="numeric" maxLength={6} required className="w-full bg-space-900/50 border border-white/10 rounded-lg p-2.5 pl-10 text-sm text-white focus:border-neon-cyan focus:outline-none" 
-                           value={formData.pin} onChange={e => setFormData({...formData, pin: e.target.value})}
+                        <Lock className="absolute left-3 top-3 text-slate-500" size={16} />
+                        <input type="password" required className="w-full bg-space-900/50 border border-white/10 rounded-lg p-2.5 pl-10 text-sm text-white focus:border-neon-cyan focus:outline-none" 
+                           value={formData.confirmPassword} onChange={e => setFormData({...formData, confirmPassword: e.target.value})}
                         />
                      </div>
+                  </div>
+               </div>
+
+               <div className="space-y-1">
+                  <label className="text-[10px] text-neon-cyan uppercase tracking-wider font-bold">6-Digit PIN</label>
+                  <div className="relative">
+                     <Shield className="absolute left-3 top-3 text-slate-500" size={16} />
+                     <input type="text" inputMode="numeric" maxLength={6} required className="w-full bg-space-900/50 border border-white/10 rounded-lg p-2.5 pl-10 text-sm text-white focus:border-neon-cyan focus:outline-none" 
+                        value={formData.pin} onChange={e => setFormData({...formData, pin: e.target.value})}
+                     />
                   </div>
                </div>
 

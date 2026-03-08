@@ -43,7 +43,7 @@ module.exports = {
   clientOriginWildcards: classifiedOrigins.wildcard,
   clientOriginExact: classifiedOrigins.exact.length > 0 ? classifiedOrigins.exact : ['http://localhost:5173'],
   rateLimitWindowMs: toNumber(getEnv('RATE_LIMIT_WINDOW', '15'), 15) * 60 * 1000,
-  rateLimitMax: toNumber(getEnv('RATE_LIMIT_MAX', '100'), 100),
+  rateLimitMax: toNumber(getEnv('RATE_LIMIT_MAX', '300'), 300),
   jwtAccessSecret: getEnv('JWT_ACCESS_SECRET', 'change-me'),
   jwtRefreshSecret: getEnv('JWT_REFRESH_SECRET', 'change-me-too'),
   jwtAccessExpiresIn: getEnv('JWT_ACCESS_EXPIRES_IN', '15m'),
