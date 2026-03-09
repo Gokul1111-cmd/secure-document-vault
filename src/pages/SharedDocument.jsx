@@ -10,6 +10,7 @@ import { Download, Lock, FileText, Shield, Clock, AlertCircle, Eye, Plus, Minus 
 import { Document as PdfDocument, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
+import OfficeViewer from '../components/ui/OfficeViewer.jsx';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -377,13 +378,6 @@ function SharedDocument() {
               ) : (
                 <Button onClick={() => {
                   setShowViewer(true);
-                  // Revoke the raw blob URL from memory after react-pdf has loaded it.
-                  // We use a blobRevoked flag to avoid clearing blobUrl from state (which
-                  // would cause the viewer to fall to the blank iframe fallback).
-                  setTimeout(() => {
-                    if (blobUrl) window.URL.revokeObjectURL(blobUrl);
-                    setBlobRevoked(true);
-                  }, 1500);
                 }} className="w-full">
                   <Eye size={18} className="mr-2" />
                   View Document
@@ -428,9 +422,9 @@ function SharedDocument() {
                 )}
                 <Button variant="outline" size="sm" onClick={() => {
                   setShowViewer(false);
+                  if (blobUrl) window.URL.revokeObjectURL(blobUrl);
+                  setBlobUrl('');
                   if (isBurnAfterRead) {
-                    if (blobUrl) window.URL.revokeObjectURL(blobUrl);
-                    setBlobUrl('');
                     setFileReady(false);
                     setError('This document was set to burn after reading. It has been securely wiped from your browser memory and the link is now permanently deactivated.');
                   }
@@ -494,17 +488,9 @@ function SharedDocument() {
                     ))}
                   </PdfDocument>
                 </div>
-              ) : blobUrl && (fileName.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/)) ? (
-                <div className="overflow-auto w-full h-full flex justify-center items-center">
-                  <img src={blobUrl} alt={fileName} className="max-w-none transition-all duration-200" style={{ transform: `scale(${zoom / 100})` }} />
-                </div>
-              ) : (!blobRevoked && blobUrl && fileName.toLowerCase().match(/\.(doc|docx|xls|xlsx|ppt|pptx)$/)) ? (
-                <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center text-slate-400">
-                  <FileText className="h-16 w-16 mb-4 opacity-50" />
-                  <h3 className="text-xl font-bold text-white mb-2">Preview Not Available</h3>
-                  <p className="max-w-md">Word, Excel, and PowerPoint documents cannot be previewed natively in the browser securely. Please download the file to view it.</p>
-                </div>
-              ) : (!blobRevoked && blobUrl) ? (
+              ) : (blobUrl && fileName.toLowerCase().match(/\.(docx|xlsx|csv)$/)) ? (
+                <OfficeViewer url={blobUrl} fileName={fileName} className="h-full w-full" />
+              ) : (blobUrl) ? (
                 <iframe
                   src={blobUrl}
                   className="w-full h-full border-none bg-white"

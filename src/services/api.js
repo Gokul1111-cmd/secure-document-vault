@@ -96,6 +96,7 @@ export const adminAPI = {
   resetPassword: (userId) => apiClient.post(`/admin/users/${userId}/reset-password`),
   getLogs: (params) => apiClient.get('/admin/logs', { params }),
   getAllDocuments: (params) => apiClient.get('/admin/documents', { params }),
+  viewDocument: (id) => apiClient.get(`/admin/documents/${id}/view`, { responseType: 'blob' }),
   deleteUser: (userId) => apiClient.delete(`/admin/users/${userId}`),
 };
 

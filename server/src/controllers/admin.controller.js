@@ -1,7 +1,8 @@
 const crypto = require('crypto');
 const { getPrismaClient } = require('../config/prisma');
 const { createAuditLog } = require('../services/auditLog.service');
-const { deleteFile } = require('../services/storage.service');
+const { deleteFile, getDownloadStream } = require('../services/storage.service');
+const { unwrapAESKey, createDecryptStream } = require('../services/crypto.service');
 const env = require('../config/env');
 
 const getUsers = async (req, res, next) => {
@@ -331,7 +332,7 @@ const deleteUser = async (req, res, next) => {
     // 3. Delete physical files from Firebase/Storage
     if (user.documents && user.documents.length > 0) {
       const deletePromises = user.documents.map(doc =>
-        deleteFile(doc.storagePath).catch(err => 
+        deleteFile(doc.storagePath).catch(err =>
           // Log but continue if file missing in storage
           console.error(`Failed to delete file ${doc.storagePath}:`, err.message)
         )
@@ -361,6 +362,47 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
+const viewDocument = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.userId; // Admin's user ID
+
+    const prisma = getPrismaClient();
+    const document = await prisma.document.findUnique({ where: { id } });
+    if (!document) return res.status(404).json({ status: 'error', message: 'Document not found' });
+
+    // Stream Setup
+    const aesKey = unwrapAESKey(document.encryptedAesKey);
+    const downloadStream = getDownloadStream(document.storagePath);
+    const decryptTransform = createDecryptStream(aesKey);
+
+    // Set Headers for Inline View
+    res.setHeader('Content-Type', document.mimeType);
+    res.setHeader('Content-Disposition', `inline; filename="${document.fileName}"`);
+
+    // Pipe: Storage -> Decrypt -> Response
+    downloadStream.pipe(decryptTransform).pipe(res);
+
+    downloadStream.on('error', (err) => {
+      console.error('Admin stream error:', err);
+      if (!res.headersSent) res.status(500).json({ status: 'error', message: 'Stream error' });
+    });
+
+    decryptTransform.on('error', (err) => {
+      console.error('Admin decryption error:', err);
+    });
+
+    await createAuditLog({
+      userId, action: 'ADMIN_VIEW', docId: id, status: 'SUCCESS',
+      ipAddr: req.ip, userAgent: req.get('user-agent'),
+      message: `Admin viewed document: ${document.fileName}`
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getUsers,
   getStats,
@@ -370,4 +412,5 @@ module.exports = {
   getAuditLogs,
   getAllDocuments,
   deleteUser,
+  viewDocument,
 };

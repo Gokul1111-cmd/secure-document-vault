@@ -12,6 +12,7 @@ import Modal from '../components/ui/Modal.jsx';
 import Input from '../components/ui/Input.jsx';
 import LoadingSpinner from '../components/ui/LoadingSpinner.jsx';
 import ConfirmDialog from '../components/ui/ConfirmDialog.jsx';
+import OfficeViewer from '../components/ui/OfficeViewer.jsx';
 
 function MyDocuments() {
     const { user } = useAuth();
@@ -29,6 +30,7 @@ function MyDocuments() {
     const [actionLoading, setActionLoading] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
+    const [viewerState, setViewerState] = useState({ isOpen: false, url: '', fileName: '', isOffice: false });
 
     // Share state
     const [showShareModal, setShowShareModal] = useState(false);
@@ -157,10 +159,6 @@ function MyDocuments() {
     };
 
     const handleView = (document) => {
-        if (document.fileName.toLowerCase().match(/\.(doc|docx|xls|xlsx|ppt|pptx)$/)) {
-            showToast('Office documents cannot be previewed natively in the browser securely. Please download them instead.', 'warning');
-            return;
-        }
         setSelectedDocument(document);
         setSelectedAction('view');
         setPin('');
@@ -181,8 +179,14 @@ function MyDocuments() {
             const url = window.URL.createObjectURL(blob);
 
             if (selectedAction === 'view') {
-                window.open(url, '_blank');
-                showToast('Document opened', 'success');
+                const isOffice = !!selectedDocument.fileName.toLowerCase().match(/\.(doc|docx|xls|xlsx|csv|ppt|pptx)$/);
+                setViewerState({
+                    isOpen: true,
+                    url: url,
+                    fileName: selectedDocument.fileName,
+                    isOffice
+                });
+                showToast('Document ready', 'success');
             } else {
                 const a = document.createElement('a');
                 a.href = url;
@@ -590,6 +594,40 @@ function MyDocuments() {
             </Modal>
 
             <ConfirmDialog isOpen={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} onConfirm={confirmDelete} danger />
+
+            {/* Universal Document Viewer Modal */}
+            {viewerState.isOpen && (
+                <div className="fixed inset-0 z-50 bg-slate-900/95 flex flex-col">
+                    <div className="flex justify-between items-center p-4 border-b border-slate-700 bg-slate-900 shrink-0">
+                        <h3 className="text-white font-medium flex items-center gap-2 truncate">
+                            <FileText size={18} className="text-blue-400 shrink-0" />
+                            <span className="truncate">{viewerState.fileName}</span>
+                            {viewerState.isOffice && (
+                                <span className="ml-2 py-0.5 px-2 bg-amber-500/20 text-amber-300 text-[10px] uppercase font-bold tracking-wider rounded-full border border-amber-500/30 shrink-0">
+                                    External Viewer
+                                </span>
+                            )}
+                        </h3>
+                        <Button variant="outline" size="sm" onClick={() => {
+                            setViewerState({ isOpen: false, url: '', fileName: '', isOffice: false });
+                            if (viewerState.url) window.URL.revokeObjectURL(viewerState.url);
+                        }} className="text-slate-300 border-slate-600 hover:bg-slate-800 shrink-0">
+                            Close Viewer
+                        </Button>
+                    </div>
+                    <div className="flex-1 bg-slate-800 relative w-full h-full overflow-hidden flex items-center justify-center p-2 sm:p-4">
+                        {viewerState.isOffice ? (
+                            <OfficeViewer url={viewerState.url} fileName={viewerState.fileName} className="rounded" />
+                        ) : (
+                            <iframe
+                                src={viewerState.url}
+                                className="w-full h-full border-none bg-white rounded"
+                                title={viewerState.fileName}
+                            />
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

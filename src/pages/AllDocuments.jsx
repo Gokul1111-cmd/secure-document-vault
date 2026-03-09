@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../components/ui/ToastContainer.jsx';
 import { adminAPI } from '../services/api.js';
-import { FileText, Search, Download, HardDrive, User, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileText, Search, Download, HardDrive, User, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 import Card from '../components/ui/Card.jsx';
 import Table from '../components/ui/Table.jsx';
 import Input from '../components/ui/Input.jsx';
 import LoadingSpinner from '../components/ui/LoadingSpinner.jsx';
 import Button from '../components/ui/Button.jsx';
+import OfficeViewer from '../components/ui/OfficeViewer.jsx';
 
 function AllDocuments() {
   const { user } = useAuth();
@@ -28,6 +29,9 @@ function AllDocuments() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const ITEMS_PER_PAGE = 10;
+
+  // Viewer State
+  const [viewerState, setViewerState] = useState({ isOpen: false, url: '', fileName: '', isOffice: false });
 
   useEffect(() => {
     if (user?.role?.toUpperCase() !== 'ADMIN') {
@@ -85,6 +89,28 @@ function AllDocuments() {
       doc.owner.email.toLowerCase().includes(query)
     );
   });
+
+  const handleView = async (document) => {
+    setLoading(true);
+    try {
+      const response = await adminAPI.viewDocument(document.id);
+      const blob = response.data instanceof Blob ? response.data : new Blob([response.data], { type: document.mimeType });
+      const url = window.URL.createObjectURL(blob);
+      const isOffice = !!document.fileName.toLowerCase().match(/\.(doc|docx|xls|xlsx|csv|ppt|pptx)$/);
+
+      setViewerState({
+        isOpen: true,
+        url: url,
+        fileName: document.fileName,
+        isOffice
+      });
+      showToast('Document ready', 'success');
+    } catch (error) {
+      showToast('Failed to open document', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6 lg:space-y-8">
@@ -173,6 +199,7 @@ function AllDocuments() {
                       <Table.Head>Upload Date</Table.Head>
                       <Table.Head>Downloads</Table.Head>
                       <Table.Head>Status</Table.Head>
+                      <Table.Head className="text-right">Actions</Table.Head>
                     </Table.Row>
                   </Table.Header>
                   <Table.Body>
@@ -216,6 +243,11 @@ function AllDocuments() {
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400">
                             Encrypted
                           </span>
+                        </Table.Cell>
+                        <Table.Cell className="text-right">
+                          <Button variant="outline" size="sm" onClick={() => handleView(doc)} className="ml-auto">
+                            <Eye size={16} className="mr-2" /> View
+                          </Button>
                         </Table.Cell>
                       </Table.Row>
                     ))}
@@ -266,6 +298,9 @@ function AllDocuments() {
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400">
                         Encrypted
                       </span>
+                      <Button variant="outline" size="sm" onClick={() => handleView(doc)}>
+                        <Eye size={16} className="mr-2" /> View
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -331,6 +366,38 @@ function AllDocuments() {
             </Card.Content>
           </Card>
         </>
+      )}
+
+      {/* Universal Document Viewer Modal (Admin) */}
+      {viewerState.isOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/95 flex flex-col">
+          <div className="flex justify-between items-center p-4 border-b border-slate-700 bg-slate-900 shrink-0">
+            <h3 className="text-white font-medium flex items-center gap-2 truncate">
+              <FileText size={18} className="text-blue-400 shrink-0" />
+              <span className="truncate">{viewerState.fileName}</span>
+              <span className="ml-2 py-0.5 px-2 bg-red-500/20 text-red-300 text-[10px] uppercase font-bold tracking-wider rounded-full border border-red-500/30 shrink-0">
+                Admin View
+              </span>
+            </h3>
+            <Button variant="outline" size="sm" onClick={() => {
+              setViewerState({ isOpen: false, url: '', fileName: '', isOffice: false });
+              if (viewerState.url) window.URL.revokeObjectURL(viewerState.url);
+            }} className="text-slate-300 border-slate-600 hover:bg-slate-800 shrink-0">
+              Close Viewer
+            </Button>
+          </div>
+          <div className="flex-1 bg-slate-800 relative w-full h-full overflow-hidden flex items-center justify-center p-2 sm:p-4">
+            {viewerState.isOffice ? (
+              <OfficeViewer url={viewerState.url} fileName={viewerState.fileName} className="rounded" />
+            ) : (
+              <iframe
+                src={viewerState.url}
+                className="w-full h-full border-none bg-white rounded"
+                title={viewerState.fileName}
+              />
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
