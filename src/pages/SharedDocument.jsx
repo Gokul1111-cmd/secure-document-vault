@@ -32,7 +32,7 @@ function SharedDocument() {
   const [isScreenshotting, setIsScreenshotting] = useState(false);
   const [isDevToolsOpen, setIsDevToolsOpen] = useState(false);
   const [blobRevoked, setBlobRevoked] = useState(false);
-  const [zoom, setZoom] = useState(120);
+  const [zoom, setZoom] = useState(typeof window !== 'undefined' && window.innerWidth < 768 ? 70 : 120);
   const [numPages, setNumPages] = useState(null);
   const [expiresAt, setExpiresAt] = useState(null);
 
