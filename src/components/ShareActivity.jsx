@@ -212,14 +212,14 @@ function ShareActivity() {
                                                             )}
                                                         </div>
                                                     </div>
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                                                    <div className="flex flex-col sm:flex-row sm:items-center gap-4 mt-3 sm:mt-0 w-full sm:w-auto">
+                                                        <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full sm:w-auto" onClick={(e) => e.stopPropagation()}>
                                                             {share.isActive && new Date(share.expiresAt) > new Date() && (
                                                                 <>
-                                                                    <Button variant="outline" size="sm" onClick={() => openExtendModal(share)}>
+                                                                    <Button variant="outline" size="sm" onClick={() => openExtendModal(share)} className="flex-1 sm:flex-none justify-center">
                                                                         Extend
                                                                     </Button>
-                                                                    <Button variant="outline" size="sm" onClick={() => handleRevoke(share.id)} className="text-red-600 border-red-200 hover:bg-red-100">
+                                                                    <Button variant="outline" size="sm" onClick={() => handleRevoke(share.id)} className="flex-1 sm:flex-none justify-center text-red-600 border-red-200 hover:bg-red-100">
                                                                         Revoke
                                                                     </Button>
                                                                 </>

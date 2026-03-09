@@ -432,12 +432,12 @@ function MyDocuments() {
                                     </div>
                                     <span className="text-xs text-slate-500">{formatFileSize(doc.fileSize)}</span>
                                 </div>
-                                <div className="flex justify-end gap-2 mt-3">
-                                    <Button size="sm" variant="outline" onClick={() => handleView(doc)}><Eye size={16} /></Button>
-                                    <Button size="sm" variant="outline" onClick={() => handleDownload(doc)}><Download size={16} /></Button>
-                                    <Button size="sm" variant="outline" onClick={() => handleShare(doc)} className="text-blue-600"><Share2 size={16} /></Button>
-                                    <Button size="sm" variant="outline" onClick={() => handleMoveClick(doc, 'file')} className="text-slate-600"><Move size={16} /></Button>
-                                    <Button size="sm" variant="outline" onClick={() => handleDelete(doc.id, 'file')} className="text-red-600"><Trash2 size={16} /></Button>
+                                <div className="flex flex-wrap justify-end gap-2 mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/50">
+                                    <Button size="sm" variant="outline" onClick={() => handleView(doc)} className="flex-1 sm:flex-none justify-center"><Eye size={16} className="sm:mr-0 xl:mr-2" /><span className="hidden xl:inline">View</span></Button>
+                                    <Button size="sm" variant="outline" onClick={() => handleDownload(doc)} className="flex-1 sm:flex-none justify-center"><Download size={16} /></Button>
+                                    <Button size="sm" variant="outline" onClick={() => handleShare(doc)} className="flex-1 sm:flex-none justify-center text-blue-600 border-blue-200"><Share2 size={16} /></Button>
+                                    <Button size="sm" variant="outline" onClick={() => handleMoveClick(doc, 'file')} className="flex-1 sm:flex-none justify-center text-slate-600 border-slate-200"><Move size={16} /></Button>
+                                    <Button size="sm" variant="outline" onClick={() => handleDelete(doc.id, 'file')} className="flex-1 sm:flex-none justify-center text-red-600 border-red-200 hover:bg-red-50"><Trash2 size={16} /></Button>
                                 </div>
                             </div>
                         ))}
@@ -484,12 +484,12 @@ function MyDocuments() {
                             {/* Expiry Section */}
                             <div className="space-y-2">
                                 <label className="text-xs font-black text-slate-500 uppercase tracking-widest">Link Expiry</label>
-                                <div className="flex gap-2">
+                                <div className="flex flex-wrap gap-2">
                                     {['1h', '6h', '24h', '7d'].map(opt => (
                                         <button
                                             key={opt}
                                             onClick={() => { setShareExpiryMode('preset'); setShareExpiry(opt); }}
-                                            className={`flex-1 py-1.5 rounded-md text-sm font-bold border transition-colors ${shareExpiryMode === 'preset' && shareExpiry === opt
+                                            className={`flex-1 min-w-[60px] py-1.5 rounded-md text-sm font-bold border transition-colors ${shareExpiryMode === 'preset' && shareExpiry === opt
                                                 ? 'bg-blue-600 text-white border-blue-600'
                                                 : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-400'}`}
                                         >
@@ -525,7 +525,7 @@ function MyDocuments() {
                                     <input type="checkbox" checked={burnAfterRead} onChange={() => setBurnAfterRead(!burnAfterRead)} className="w-4 h-4 accent-blue-600 cursor-pointer" />
                                 </div>
                                 {!burnAfterRead && (
-                                    <div className="flex items-center justify-between gap-3">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                         <span className="text-sm font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">Max Access Count</span>
                                         <Input
                                             type="number"
@@ -533,7 +533,7 @@ function MyDocuments() {
                                             value={maxAccess}
                                             onChange={e => setMaxAccess(e.target.value)}
                                             placeholder="Unlimited"
-                                            className="w-32 text-right"
+                                            className="w-full sm:w-32 text-left sm:text-right"
                                         />
                                     </div>
                                 )}

@@ -50,7 +50,7 @@ function AuditLogs() {
       const offset = (currentPage - 1) * LOGS_PER_PAGE;
       const params = { limit: LOGS_PER_PAGE, offset };
       if (filterStatus !== 'all') params.status = filterStatus.toUpperCase();
-      
+
       const response = await adminAPI.getLogs(params);
       const logsData = response.data.data.logs.map(log => ({
         id: log.id,
@@ -62,10 +62,10 @@ function AuditLogs() {
         userAgent: log.userAgent || 'Unknown',
         status: log.status.toLowerCase()
       }));
-      
+
       setLogs(logsData);
       setTotalLogs(response.data.data.total);
-      
+
       // Fetch stats separately (all logs for statistics)
       const statsResponse = await adminAPI.getLogs({ limit: 10000 });
       const allLogs = statsResponse.data.data.logs;
@@ -85,9 +85,9 @@ function AuditLogs() {
 
   const filteredLogs = logs.filter(log => {
     const matchesSearch = log.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         log.resource.toLowerCase().includes(searchTerm.toLowerCase());
-    
+      log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.resource.toLowerCase().includes(searchTerm.toLowerCase());
+
     return matchesSearch;
   });
 
@@ -125,11 +125,11 @@ function AuditLogs() {
   const exportLogs = () => {
     const csv = [
       ['Action', 'User', 'Resource', 'Timestamp', 'IP Address', 'Status'].join(','),
-      ...filteredLogs.map(log => 
+      ...filteredLogs.map(log =>
         [log.action, log.user, log.resource, log.timestamp, log.ipAddress, log.status].join(',')
       )
     ].join('\n');
-    
+
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -139,7 +139,7 @@ function AuditLogs() {
     a.click();
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
-    
+
     showToast('Audit logs exported successfully', 'success');
   };
 
@@ -217,181 +217,231 @@ function AuditLogs() {
             </Card>
           </div>
 
-      {/* Filters and Search */}
-      <Card padding="sm">
-        <Card.Content>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-              <Input
-                placeholder="Search logs..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                icon={<Search size={18} />}
-                className="w-full sm:w-64"
-              />
-              
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 sm:w-auto"
-              >
-                <option value="all">All Status</option>
-                <option value="success">Success</option>
-                <option value="failed">Failed</option>
-                <option value="warning">Warning</option>
-              </select>
+          {/* Filters and Search */}
+          <Card padding="sm">
+            <Card.Content>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                  <Input
+                    placeholder="Search logs..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    icon={<Search size={18} />}
+                    className="w-full sm:w-64"
+                  />
 
-              <select
-                value={selectedDateRange}
-                onChange={(e) => setSelectedDateRange(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 sm:w-auto"
-              >
-                <option value="all">All Time</option>
-                <option value="today">Today</option>
-                <option value="week">This Week</option>
-                <option value="month">This Month</option>
-              </select>
-            </div>
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 sm:w-auto"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="success">Success</option>
+                    <option value="failed">Failed</option>
+                    <option value="warning">Warning</option>
+                  </select>
 
-            <div className="flex w-full items-center justify-end sm:w-auto">
-              <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                <Filter size={16} />
-                <span className="ml-2">More Filters</span>
-              </Button>
-            </div>
-          </div>
-        </Card.Content>
-      </Card>
-
-      {/* Audit Logs Table */}
-      <Card>
-        <Card.Header>
-          <Card.Title>Activity Logs (Showing {filteredLogs.length} of {totalLogs} events - Page {currentPage} of {totalPages})</Card.Title>
-        </Card.Header>
-        <Card.Content>
-          <Table>
-            <Table.Header>
-              <Table.Row>
-                <Table.Head>Action</Table.Head>
-                <Table.Head>User</Table.Head>
-                <Table.Head>Resource</Table.Head>
-                <Table.Head>Timestamp</Table.Head>
-                <Table.Head>IP Address</Table.Head>
-                <Table.Head>User Agent</Table.Head>
-                <Table.Head>Status</Table.Head>
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {filteredLogs.map((log) => (
-                <Table.Row key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/70">
-                  <Table.Cell>
-                    <div className="flex items-center space-x-2">
-                      {getActionIcon(log.action)}
-                      <span className="text-sm font-medium text-slate-900 dark:text-white sm:text-base">{log.action}</span>
-                    </div>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <div className="text-sm font-medium text-slate-900 dark:text-white sm:text-base">{log.user}</div>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <span className="text-sm text-slate-600 dark:text-slate-300 sm:text-base">{log.resource}</span>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <div className="text-xs text-slate-600 dark:text-slate-300 sm:text-sm">
-                      <div className="font-medium text-slate-900 dark:text-white">
-                        {formatTimestamp(log.timestamp).split(',')[1]}
-                      </div>
-                      <div className="text-slate-500 dark:text-slate-400">
-                        {formatTimestamp(log.timestamp).split(',')[0]}
-                      </div>
-                    </div>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <code className="text-xs bg-slate-100 dark:bg-slate-800/70 px-2 py-1 rounded">
-                      {log.ipAddress}
-                    </code>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <span className="text-xs text-slate-600 dark:text-slate-300 sm:text-sm max-w-32 truncate block">
-                      {log.userAgent}
-                    </span>
-                  </Table.Cell>
-                  <Table.Cell>
-                    {getStatusBadge(log.status)}
-                  </Table.Cell>
-                </Table.Row>
-              ))}
-            </Table.Body>
-          </Table>
-
-          {filteredLogs.length === 0 && (
-            <div className="py-10 text-center text-slate-500 dark:text-slate-400">
-              <Activity className="mx-auto mb-3 h-10 w-10 text-slate-300" />
-              <p className="text-sm sm:text-base">No audit logs found matching your criteria.</p>
-            </div>
-          )}
-
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="mt-6 flex items-center justify-between border-t border-slate-200 dark:border-slate-700 pt-4">
-              <div className="text-sm text-slate-600 dark:text-slate-400">
-                Showing {((currentPage - 1) * LOGS_PER_PAGE) + 1} to {Math.min(currentPage * LOGS_PER_PAGE, totalLogs)} of {totalLogs} results
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="px-3 py-1"
-                >
-                  Previous
-                </Button>
-                
-                {/* Page Numbers */}
-                <div className="flex gap-1">
-                  {[...Array(Math.min(5, totalPages))].map((_, idx) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = idx + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = idx + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + idx;
-                    } else {
-                      pageNum = currentPage - 2 + idx;
-                    }
-                    
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => handlePageChange(pageNum)}
-                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                          currentPage === pageNum
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                        }`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
+                  <select
+                    value={selectedDateRange}
+                    onChange={(e) => setSelectedDateRange(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 sm:w-auto"
+                  >
+                    <option value="all">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                  </select>
                 </div>
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-1"
-                >
-                  Next
-                </Button>
+                <div className="flex w-full items-center justify-end sm:w-auto">
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                    <Filter size={16} />
+                    <span className="ml-2">More Filters</span>
+                  </Button>
+                </div>
               </div>
-            </div>
-          )}
-        </Card.Content>
-      </Card>
+            </Card.Content>
+          </Card>
+
+          {/* Audit Logs Table */}
+          <Card>
+            <Card.Header>
+              <Card.Title>Activity Logs (Showing {filteredLogs.length} of {totalLogs} events - Page {currentPage} of {totalPages})</Card.Title>
+            </Card.Header>
+            <Card.Content>
+              <div className="hidden md:block">
+                <Table>
+                  <Table.Header>
+                    <Table.Row>
+                      <Table.Head>Action</Table.Head>
+                      <Table.Head>User</Table.Head>
+                      <Table.Head>Resource</Table.Head>
+                      <Table.Head>Timestamp</Table.Head>
+                      <Table.Head>IP Address</Table.Head>
+                      <Table.Head>User Agent</Table.Head>
+                      <Table.Head>Status</Table.Head>
+                    </Table.Row>
+                  </Table.Header>
+                  <Table.Body>
+                    {filteredLogs.map((log) => (
+                      <Table.Row key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/70">
+                        <Table.Cell>
+                          <div className="flex items-center space-x-2">
+                            {getActionIcon(log.action)}
+                            <span className="text-sm font-medium text-slate-900 dark:text-white sm:text-base">{log.action}</span>
+                          </div>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <div className="text-sm font-medium text-slate-900 dark:text-white sm:text-base">{log.user}</div>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <span className="text-sm text-slate-600 dark:text-slate-300 sm:text-base">{log.resource}</span>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <div className="text-xs text-slate-600 dark:text-slate-300 sm:text-sm">
+                            <div className="font-medium text-slate-900 dark:text-white">
+                              {formatTimestamp(log.timestamp).split(',')[1]}
+                            </div>
+                            <div className="text-slate-500 dark:text-slate-400">
+                              {formatTimestamp(log.timestamp).split(',')[0]}
+                            </div>
+                          </div>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <code className="text-xs bg-slate-100 dark:bg-slate-800/70 px-2 py-1 rounded">
+                            {log.ipAddress}
+                          </code>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <span className="text-xs text-slate-600 dark:text-slate-300 sm:text-sm max-w-32 truncate block">
+                            {log.userAgent}
+                          </span>
+                        </Table.Cell>
+                        <Table.Cell>
+                          {getStatusBadge(log.status)}
+                        </Table.Cell>
+                      </Table.Row>
+                    ))}
+                  </Table.Body>
+                </Table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-4">
+                {filteredLogs.map((log) => (
+                  <div key={log.id} className="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm relative">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        <div className="h-10 w-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
+                          {getActionIcon(log.action)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-slate-900 dark:text-white truncate text-base leading-tight">{log.action}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                            {log.resource}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="shrink-0 ml-2">
+                        {getStatusBadge(log.status)}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 mb-2 text-sm border-t border-slate-100 dark:border-slate-700/50 pt-3">
+                      <div className="col-span-2">
+                        <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">User</p>
+                        <p className="font-medium text-slate-900 dark:text-white truncate">{log.user}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Timestamp</p>
+                        <p className="font-medium text-slate-900 dark:text-white">
+                          {formatTimestamp(log.timestamp).split(',')[0]}
+                          <span className="block text-xs text-slate-500 font-normal">{formatTimestamp(log.timestamp).split(',')[1]}</span>
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Network</p>
+                        <p className="font-medium text-slate-900 dark:text-white font-mono text-xs">{log.ipAddress}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {filteredLogs.length === 0 && (
+                  <div className="py-8 text-center bg-slate-50 dark:bg-slate-800/50 rounded-lg text-slate-500">
+                    <Activity className="mx-auto mb-2 h-8 w-8 text-slate-400" />
+                    <p className="text-sm">No logs found.</p>
+                  </div>
+                )}
+              </div>
+
+              {filteredLogs.length === 0 && (
+                <div className="py-10 text-center text-slate-500 dark:text-slate-400 hidden md:block">
+                  <Activity className="mx-auto mb-3 h-10 w-10 text-slate-300" />
+                  <p className="text-sm sm:text-base">No audit logs found matching your criteria.</p>
+                </div>
+              )}
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="mt-6 flex items-center justify-between border-t border-slate-200 dark:border-slate-700 pt-4">
+                  <div className="text-sm text-slate-600 dark:text-slate-400">
+                    Showing {((currentPage - 1) * LOGS_PER_PAGE) + 1} to {Math.min(currentPage * LOGS_PER_PAGE, totalLogs)} of {totalLogs} results
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1"
+                    >
+                      Previous
+                    </Button>
+
+                    {/* Page Numbers */}
+                    <div className="flex gap-1">
+                      {[...Array(Math.min(5, totalPages))].map((_, idx) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = idx + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = idx + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + idx;
+                        } else {
+                          pageNum = currentPage - 2 + idx;
+                        }
+
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => handlePageChange(pageNum)}
+                            className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${currentPage === pageNum
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                              }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </Card.Content>
+          </Card>
         </>
       )}
     </div>

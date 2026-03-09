@@ -43,7 +43,7 @@ function UserManagement() {
     try {
       const response = await adminAPI.getUsers();
       const usersData = response.data.data;
-      
+
       setUsers(usersData);
       setStats({
         total: usersData.length,
@@ -107,7 +107,7 @@ function UserManagement() {
 
   const filteredUsers = users.filter(u => {
     const matchesSearch = u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         u.email.toLowerCase().includes(searchTerm.toLowerCase());
+      u.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || u.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
@@ -215,7 +215,7 @@ function UserManagement() {
                     icon={<Search size={18} />}
                     className="w-full sm:w-64"
                   />
-                  
+
                   <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
@@ -237,92 +237,152 @@ function UserManagement() {
               <Card.Title>All Users ({filteredUsers.length})</Card.Title>
             </Card.Header>
             <Card.Content>
-              <Table>
-                <Table.Header>
-                  <Table.Row>
-                    <Table.Head>Name</Table.Head>
-                    <Table.Head>Email</Table.Head>
-                    <Table.Head>Role</Table.Head>
-                    <Table.Head>Status</Table.Head>
-                    <Table.Head>Failed Attempts</Table.Head>
-                    <Table.Head>Last Login</Table.Head>
-                    <Table.Head>Actions</Table.Head>
-                  </Table.Row>
-                </Table.Header>
-                <Table.Body>
-                  {filteredUsers.map((u) => (
-                    <Table.Row key={u.id}>
-                      <Table.Cell>
-                        <div className="text-sm font-medium text-slate-900 dark:text-white sm:text-base">{u.name}</div>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <div className="flex items-center space-x-2">
-                          <Mail size={14} className="text-slate-400" />
-                          <span className="text-xs text-slate-600 dark:text-slate-300 sm:text-sm">{u.email}</span>
-                        </div>
-                      </Table.Cell>
-                      <Table.Cell>
-                        {getRoleBadge(u.role)}
-                      </Table.Cell>
-                      <Table.Cell>
-                        {getStatusBadge(u.status)}
-                      </Table.Cell>
-                      <Table.Cell>
-                        <span className={`text-sm ${u.failedAttempts > 0 ? 'text-red-600 font-medium' : 'text-slate-600 dark:text-slate-300'}`}>
-                          {u.failedAttempts}
-                        </span>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <div className="text-xs text-slate-600 dark:text-slate-300 sm:text-sm">
-                          {u.lastLogin ? new Date(u.lastLogin).toLocaleString() : 'Never'}
-                        </div>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <div className="flex items-center space-x-2">
-                          {u.status === 'LOCKED' ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleUnlockUser(u.id)}
-                              disabled={u.role === 'ADMIN'}
-                              title="Unlock User"
-                            >
-                              <Unlock size={14} />
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleLockUser(u.id)}
-                              disabled={u.role === 'ADMIN'}
-                              title="Lock User"
-                            >
-                              <Lock size={14} />
-                            </Button>
-                          )}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteClick(u)}
-                            disabled={u.role === 'ADMIN'}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 dark:text-red-300 dark:hover:text-red-200 dark:hover:bg-red-900/20 dark:border-red-500/40"
-                            title="Delete User"
-                          >
-                            <Trash2 size={14} />
-                          </Button>
-                        </div>
-                      </Table.Cell>
+              <div className="hidden md:block">
+                <Table>
+                  <Table.Header>
+                    <Table.Row>
+                      <Table.Head>Name</Table.Head>
+                      <Table.Head>Email</Table.Head>
+                      <Table.Head>Role</Table.Head>
+                      <Table.Head>Status</Table.Head>
+                      <Table.Head>Failed Attempts</Table.Head>
+                      <Table.Head>Last Login</Table.Head>
+                      <Table.Head>Actions</Table.Head>
                     </Table.Row>
-                  ))}
-                </Table.Body>
-              </Table>
+                  </Table.Header>
+                  <Table.Body>
+                    {filteredUsers.map((u) => (
+                      <Table.Row key={u.id}>
+                        <Table.Cell>
+                          <div className="text-sm font-medium text-slate-900 dark:text-white sm:text-base">{u.name}</div>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <div className="flex items-center space-x-2">
+                            <Mail size={14} className="text-slate-400" />
+                            <span className="text-xs text-slate-600 dark:text-slate-300 sm:text-sm">{u.email}</span>
+                          </div>
+                        </Table.Cell>
+                        <Table.Cell>
+                          {getRoleBadge(u.role)}
+                        </Table.Cell>
+                        <Table.Cell>
+                          {getStatusBadge(u.status)}
+                        </Table.Cell>
+                        <Table.Cell>
+                          <span className={`text-sm ${u.failedAttempts > 0 ? 'text-red-600 font-medium' : 'text-slate-600 dark:text-slate-300'}`}>
+                            {u.failedAttempts}
+                          </span>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <div className="text-xs text-slate-600 dark:text-slate-300 sm:text-sm">
+                            {u.lastLogin ? new Date(u.lastLogin).toLocaleString() : 'Never'}
+                          </div>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <div className="flex items-center space-x-2">
+                            {u.status === 'LOCKED' ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleUnlockUser(u.id)}
+                                disabled={u.role === 'ADMIN'}
+                                title="Unlock User"
+                              >
+                                <Unlock size={14} />
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleLockUser(u.id)}
+                                disabled={u.role === 'ADMIN'}
+                                title="Lock User"
+                              >
+                                <Lock size={14} />
+                              </Button>
+                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteClick(u)}
+                              disabled={u.role === 'ADMIN'}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 dark:text-red-300 dark:hover:text-red-200 dark:hover:bg-red-900/20 dark:border-red-500/40"
+                              title="Delete User"
+                            >
+                              <Trash2 size={14} />
+                            </Button>
+                          </div>
+                        </Table.Cell>
+                      </Table.Row>
+                    ))}
+                  </Table.Body>
+                </Table>
 
-              {filteredUsers.length === 0 && (
-                <div className="py-10 text-center text-slate-500 dark:text-slate-400">
-                  <Users className="mx-auto mb-3 h-10 w-10 text-slate-300" />
-                  <p className="text-sm sm:text-base">No users found matching your criteria.</p>
-                </div>
-              )}
+                {filteredUsers.length === 0 && (
+                  <div className="py-10 text-center text-slate-500 dark:text-slate-400">
+                    <Users className="mx-auto mb-3 h-10 w-10 text-slate-300" />
+                    <p className="text-sm sm:text-base">No users found matching your criteria.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-4">
+                {filteredUsers.map((u) => (
+                  <div key={u.id} className="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm relative">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600 font-bold shrink-0">
+                          {u.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-slate-900 dark:text-white truncate text-base leading-tight">{u.name}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5 flex items-center gap-1">
+                            <Mail size={12} /> {u.email}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 shrink-0 ml-2">
+                        {getRoleBadge(u.role)}
+                        {getStatusBadge(u.status)}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-slate-500 bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-md mb-3">
+                      <div>
+                        <span className="block mb-0.5">Last Login</span>
+                        <span className="font-medium text-slate-900 dark:text-white">{u.lastLogin ? new Date(u.lastLogin).toLocaleDateString() : 'Never'}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="block mb-0.5">Failed Logins</span>
+                        <span className={`font-bold ${u.failedAttempts > 0 ? 'text-red-500' : 'text-slate-900 dark:text-white'}`}>{u.failedAttempts}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/50">
+                      {u.status === 'LOCKED' ? (
+                        <Button variant="outline" size="sm" onClick={() => handleUnlockUser(u.id)} disabled={u.role === 'ADMIN'} className="flex-1 justify-center">
+                          <Unlock size={14} className="mr-1" /> Unlock
+                        </Button>
+                      ) : (
+                        <Button variant="outline" size="sm" onClick={() => handleLockUser(u.id)} disabled={u.role === 'ADMIN'} className="flex-1 justify-center">
+                          <Lock size={14} className="mr-1" /> Lock
+                        </Button>
+                      )}
+                      <Button variant="outline" size="sm" onClick={() => handleDeleteClick(u)} disabled={u.role === 'ADMIN'} className="flex-1 justify-center text-red-600 border-red-200">
+                        <Trash2 size={14} className="mr-1" /> Delete
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+
+                {filteredUsers.length === 0 && (
+                  <div className="py-8 text-center bg-slate-50 dark:bg-slate-800/50 rounded-lg text-slate-500">
+                    <Users className="mx-auto mb-2 h-8 w-8 text-slate-400" />
+                    <p className="text-sm">No users found.</p>
+                  </div>
+                )}
+              </div>
             </Card.Content>
           </Card>
 

@@ -163,70 +163,120 @@ function AllDocuments() {
               <p className="text-xs text-slate-600 dark:text-slate-400 font-medium sm:text-sm">Showing {filteredDocuments.length} documents on this page.</p>
             </Card.Header>
             <Card.Content>
-              <Table>
-                <Table.Header>
-                  <Table.Row>
-                    <Table.Head>Document</Table.Head>
-                    <Table.Head>Owner</Table.Head>
-                    <Table.Head>Size</Table.Head>
-                    <Table.Head>Upload Date</Table.Head>
-                    <Table.Head>Downloads</Table.Head>
-                    <Table.Head>Status</Table.Head>
-                  </Table.Row>
-                </Table.Header>
-                <Table.Body>
-                  {filteredDocuments.map((doc) => (
-                    <Table.Row key={doc.id}>
-                      <Table.Cell>
-                        <div className="flex items-start space-x-3">
-                          <FileText className="mt-0.5 h-5 w-5 text-blue-600" />
-                          <div>
-                            <p className="text-sm font-bold text-slate-900 dark:text-white sm:text-base">{doc.fileName}</p>
-                            <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">{doc.mimeType}</p>
-                          </div>
-                        </div>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <div>
-                          <p className="text-sm font-medium text-slate-900 dark:text-white sm:text-base">{doc.owner.name}</p>
-                          <p className="text-xs text-slate-600 dark:text-slate-400 sm:text-sm">{doc.owner.email}</p>
-                        </div>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <span className="text-sm text-slate-600 dark:text-slate-400 sm:text-base">{formatFileSize(doc.fileSize)}</span>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <div className="text-xs text-slate-600 dark:text-slate-400 sm:text-sm">
-                          <div className="font-bold text-slate-900 dark:text-white">
-                            {new Date(doc.createdAt).toLocaleDateString()}
-                          </div>
-                          <div className="text-slate-600 dark:text-slate-400 font-medium">
-                            {new Date(doc.createdAt).toLocaleTimeString()}
-                          </div>
-                        </div>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <div className="flex items-center space-x-1 text-sm sm:text-base">
-                          <Download size={14} className="text-slate-400" />
-                          <span className="text-slate-600 dark:text-slate-400">{doc.downloadCount}</span>
-                        </div>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400">
-                          Encrypted
-                        </span>
-                      </Table.Cell>
+              <div className="hidden md:block">
+                <Table>
+                  <Table.Header>
+                    <Table.Row>
+                      <Table.Head>Document</Table.Head>
+                      <Table.Head>Owner</Table.Head>
+                      <Table.Head>Size</Table.Head>
+                      <Table.Head>Upload Date</Table.Head>
+                      <Table.Head>Downloads</Table.Head>
+                      <Table.Head>Status</Table.Head>
                     </Table.Row>
-                  ))}
-                </Table.Body>
-              </Table>
+                  </Table.Header>
+                  <Table.Body>
+                    {filteredDocuments.map((doc) => (
+                      <Table.Row key={doc.id}>
+                        <Table.Cell>
+                          <div className="flex items-start space-x-3">
+                            <FileText className="mt-0.5 h-5 w-5 text-blue-600" />
+                            <div>
+                              <p className="text-sm font-bold text-slate-900 dark:text-white sm:text-base">{doc.fileName}</p>
+                              <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">{doc.mimeType}</p>
+                            </div>
+                          </div>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <div>
+                            <p className="text-sm font-medium text-slate-900 dark:text-white sm:text-base">{doc.owner.name}</p>
+                            <p className="text-xs text-slate-600 dark:text-slate-400 sm:text-sm">{doc.owner.email}</p>
+                          </div>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <span className="text-sm text-slate-600 dark:text-slate-400 sm:text-base">{formatFileSize(doc.fileSize)}</span>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <div className="text-xs text-slate-600 dark:text-slate-400 sm:text-sm">
+                            <div className="font-bold text-slate-900 dark:text-white">
+                              {new Date(doc.createdAt).toLocaleDateString()}
+                            </div>
+                            <div className="text-slate-600 dark:text-slate-400 font-medium">
+                              {new Date(doc.createdAt).toLocaleTimeString()}
+                            </div>
+                          </div>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <div className="flex items-center space-x-1 text-sm sm:text-base">
+                            <Download size={14} className="text-slate-400" />
+                            <span className="text-slate-600 dark:text-slate-400">{doc.downloadCount}</span>
+                          </div>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400">
+                            Encrypted
+                          </span>
+                        </Table.Cell>
+                      </Table.Row>
+                    ))}
+                  </Table.Body>
+                </Table>
 
-              {filteredDocuments.length === 0 && (
-                <div className="text-center py-10 text-slate-600">
-                  <FileText className="h-10 w-10 mx-auto mb-3 text-slate-300" />
-                  <p className="text-sm sm:text-base">No documents found.</p>
-                </div>
-              )}
+                {filteredDocuments.length === 0 && (
+                  <div className="text-center py-10 text-slate-600">
+                    <FileText className="h-10 w-10 mx-auto mb-3 text-slate-300" />
+                    <p className="text-sm sm:text-base">No documents found.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-4">
+                {filteredDocuments.map((doc) => (
+                  <div key={doc.id} className="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <div className="flex items-start gap-3 mb-3">
+                      <FileText className="h-8 w-8 text-blue-600 bg-blue-50 dark:bg-blue-900/40 p-1.5 rounded-lg shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-slate-900 dark:text-white truncate text-base">{doc.fileName}</p>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 font-medium truncate">{doc.mimeType}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 mb-3 text-sm border-t border-slate-100 dark:border-slate-700/50 pt-3">
+                      <div>
+                        <p className="text-xs text-slate-500 mb-0.5">Owner</p>
+                        <p className="font-medium truncate">{doc.owner.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 mb-0.5">Size</p>
+                        <p className="font-medium">{formatFileSize(doc.fileSize)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 mb-0.5">Date</p>
+                        <p className="font-medium">{new Date(doc.createdAt).toLocaleDateString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 mb-0.5">Downloads</p>
+                        <div className="flex items-center gap-1 font-medium">
+                          <Download size={14} className="text-slate-400" /> {doc.downloadCount}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-700/50">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400">
+                        Encrypted
+                      </span>
+                    </div>
+                  </div>
+                ))}
+
+                {filteredDocuments.length === 0 && (
+                  <div className="text-center py-8 text-slate-600 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                    <FileText className="h-8 w-8 mx-auto mb-2 text-slate-400" />
+                    <p className="text-sm">No documents found.</p>
+                  </div>
+                )}
+              </div>
 
               {/* Pagination Controls */}
               <div className="flex items-center justify-between mt-4 border-t border-slate-200 dark:border-slate-700 pt-4">
