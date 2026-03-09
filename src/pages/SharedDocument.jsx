@@ -50,70 +50,87 @@ function SharedDocument() {
   }, [token]);
 
   useEffect(() => {
-    // Anti-screenshot protection mechanism
-    // Native OS screenshot tools usually trigger window blur/visibility loss
+    // ─────────────────────────────────────────────────────────────
+    // ANTI-SCREENSHOT PROTECTION  (multi-layer)
+    // ─────────────────────────────────────────────────────────────
+
+    // Layer 1 – page visibility (Win+D, task-switch, Snip & Sketch
+    //           all cause document.hidden before capturing on Windows)
     const handleVisibilityChange = () => {
       if (document.hidden) {
         setIsScreenshotting(true);
       } else {
-        // Add a slight delay before revealing to defeat rapid capture
-        setTimeout(() => setIsScreenshotting(false), 200);
+        setTimeout(() => setIsScreenshotting(false), 500);
       }
     };
 
+    // Layer 2 – window focus/blur  (Alt+PrintScreen, Snipping Tool,
+    //           macOS Cmd+Shift+4, Greenshot etc. all blur the window)
     const handleWindowBlur = () => {
       setIsScreenshotting(true);
     };
-
     const handleWindowFocus = () => {
-      setTimeout(() => setIsScreenshotting(false), 200);
+      setTimeout(() => setIsScreenshotting(false), 500);
     };
 
-    // Prevent print screen, save page, and preemptively blur on modifier keys for screenshot combos
+    // Layer 3 – keyboard pre-blur
+    // We blur immediately on ANY key that can start a screenshot combo:
+    //   • PrintScreen / SysRq (direct capture)
+    //   • Shift / Meta / Control / Alt (for Win+Shift+S, Cmd+Shift+4, etc.)
+    // This pre-blur fires before the OS composites the frame on most GPUs.
+    let screenshotTimeout = null;
+    const BLUR_MODIFIER_KEYS = new Set([
+      'PrintScreen', 'SysRq',
+      'Shift', 'Control', 'Meta', 'Alt', 'OS'
+    ]);
+
     const handleKeyDown = (e) => {
-      if (e.key === 'PrintScreen' || (e.ctrlKey && e.key === 'p') || (e.metaKey && e.key === 'p')) {
+      if (BLUR_MODIFIER_KEYS.has(e.key)) {
         setIsScreenshotting(true);
-        navigator.clipboard.writeText(''); // Attempt to clear snippet from clipboard
-        showToast('Screenshots and printing are disabled for this document.', 'error');
+        clearTimeout(screenshotTimeout);
+        if (e.key === 'PrintScreen' || e.key === 'SysRq') {
+          navigator.clipboard.writeText('').catch(() => { });
+          showToast('Screenshots are disabled for this document.', 'error');
+        }
         e.preventDefault();
-      } else if ((e.ctrlKey && e.key === 's') || (e.metaKey && e.key === 's')) {
-        // Block Ctrl+S / Cmd+S Save Page
-        showToast('Saving this document is disabled.', 'error');
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 's')) {
+        showToast('Saving and printing are disabled for this document.', 'error');
         e.preventDefault();
-      } else if (e.key === 'Meta' || e.key === 'OS' || e.key === 'Shift') {
-        // Blur immediately when the user starts holding the combination for Win+Shift+S or Cmd+Shift+4
-        setIsScreenshotting(true);
       }
     };
 
     const handleKeyUp = (e) => {
-      if (e.key === 'Meta' || e.key === 'OS' || e.key === 'Shift' || e.key === 'PrintScreen') {
-        if (document.hasFocus()) {
-          // If it was PrintScreen, force a longer blur to defeat instant snip tools
-          const delay = e.key === 'PrintScreen' ? 1500 : 300;
-          setTimeout(() => setIsScreenshotting(false), delay);
-        }
+      if (BLUR_MODIFIER_KEYS.has(e.key)) {
+        screenshotTimeout = setTimeout(() => {
+          if (document.hasFocus()) setIsScreenshotting(false);
+        }, 600);
       }
     };
+
+    // Layer 4 – continuous clipboard poison (make paste of any cached
+    //           screenshot attempt useless by overwriting the clipboard)
+    let clipboardInterval = null;
+    const startClipboardPoison = () => {
+      clipboardInterval = setInterval(() => {
+        navigator.clipboard.writeText('').catch(() => { });
+      }, 500);
+    };
+    const stopClipboardPoison = () => clearInterval(clipboardInterval);
+    startClipboardPoison();
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('blur', handleWindowBlur);
     window.addEventListener('focus', handleWindowFocus);
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    window.addEventListener('keyup', handleKeyUp, { capture: true });
 
-    // DevTools detection - only use the image getter trick (reliable)
-    // The outerWidth heuristic had too many false positives on different screen/window configurations
+    // DevTools detection
     const devToolsInterval = setInterval(() => {
       let devToolsDetected = false;
       const element = new Image();
       Object.defineProperty(element, 'id', {
-        get: () => {
-          devToolsDetected = true;
-        }
+        get: () => { devToolsDetected = true; }
       });
-      // Triggers getters only when DevTools console formats the object
-      // This won't be read when DevTools is closed
       console.debug('%c', element);
       setIsDevToolsOpen(devToolsDetected);
     }, 1500);
@@ -122,9 +139,11 @@ function SharedDocument() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('blur', handleWindowBlur);
       window.removeEventListener('focus', handleWindowFocus);
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('keydown', handleKeyDown, { capture: true });
+      window.removeEventListener('keyup', handleKeyUp, { capture: true });
       clearInterval(devToolsInterval);
+      stopClipboardPoison();
+      clearTimeout(screenshotTimeout);
     };
   }, []);
 
@@ -435,9 +454,8 @@ function SharedDocument() {
             </div>
 
             <div
-              className={`flex-1 bg-slate-800 relative w-full h-full overflow-hidden flex items-center justify-center select-none transition-all duration-75 ${(isScreenshotting || isDevToolsOpen) ? 'blur-xl brightness-50 contrast-200' : ''
-                }`}
-              style={(isScreenshotting || isDevToolsOpen) ? { filter: 'blur(20px) brightness(0.2)' } : {}}
+              className={`flex-1 bg-slate-800 relative w-full h-full overflow-hidden flex items-center justify-center select-none transition-all duration-75 ${(isScreenshotting || isDevToolsOpen) ? 'blur-xl' : ''}`}
+              style={(isScreenshotting || isDevToolsOpen) ? { filter: 'blur(24px) brightness(0.1) saturate(0)', pointerEvents: 'none' } : {}}
               onContextMenu={(e) => e.preventDefault()}
               onCopy={(e) => {
                 e.preventDefault();
@@ -449,6 +467,31 @@ function SharedDocument() {
               }}
               onDragStart={(e) => e.preventDefault()}
             >
+              {/* Security watermark - near-invisible normally, appears in screenshots */}
+              {!isScreenshotting && !isDevToolsOpen && (
+                <div
+                  className="absolute inset-0 z-20 pointer-events-none select-none overflow-hidden"
+                  style={{ opacity: 0.04 }}
+                  aria-hidden="true"
+                >
+                  {Array.from({ length: 8 }, (_, row) =>
+                    Array.from({ length: 6 }, (_, col) => (
+                      <span
+                        key={`${row}-${col}`}
+                        className="absolute text-white font-bold text-xs uppercase tracking-widest"
+                        style={{
+                          transform: 'rotate(-35deg)',
+                          top: `${row * 130 - 30}px`,
+                          left: `${col * 200 - 50}px`,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        ⚿ SECURE DOCUMENT
+                      </span>
+                    ))
+                  )}
+                </div>
+              )}
               {(isScreenshotting || isDevToolsOpen) && (
                 <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/80">
                   <div className="bg-slate-800 p-6 rounded-xl border border-red-900/50 flex flex-col items-center shadow-2xl">
