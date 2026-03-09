@@ -72,6 +72,7 @@ function SharedDocument() {
     const handleKeyDown = (e) => {
       if (e.key === 'PrintScreen' || (e.ctrlKey && e.key === 'p') || (e.metaKey && e.key === 'p')) {
         setIsScreenshotting(true);
+        navigator.clipboard.writeText(''); // Attempt to clear snippet from clipboard
         showToast('Screenshots and printing are disabled for this document.', 'error');
         e.preventDefault();
       } else if ((e.ctrlKey && e.key === 's') || (e.metaKey && e.key === 's')) {
@@ -86,9 +87,10 @@ function SharedDocument() {
 
     const handleKeyUp = (e) => {
       if (e.key === 'Meta' || e.key === 'OS' || e.key === 'Shift' || e.key === 'PrintScreen') {
-        // Only unblur if the window still has focus (meaning the screenshot tool didn't actually open)
         if (document.hasFocus()) {
-          setTimeout(() => setIsScreenshotting(false), 300);
+          // If it was PrintScreen, force a longer blur to defeat instant snip tools
+          const delay = e.key === 'PrintScreen' ? 1500 : 300;
+          setTimeout(() => setIsScreenshotting(false), delay);
         }
       }
     };
@@ -495,6 +497,12 @@ function SharedDocument() {
               ) : blobUrl && (fileName.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/)) ? (
                 <div className="overflow-auto w-full h-full flex justify-center items-center">
                   <img src={blobUrl} alt={fileName} className="max-w-none transition-all duration-200" style={{ transform: `scale(${zoom / 100})` }} />
+                </div>
+              ) : (!blobRevoked && blobUrl && fileName.toLowerCase().match(/\.(doc|docx|xls|xlsx|ppt|pptx)$/)) ? (
+                <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center text-slate-400">
+                  <FileText className="h-16 w-16 mb-4 opacity-50" />
+                  <h3 className="text-xl font-bold text-white mb-2">Preview Not Available</h3>
+                  <p className="max-w-md">Word, Excel, and PowerPoint documents cannot be previewed natively in the browser securely. Please download the file to view it.</p>
                 </div>
               ) : (!blobRevoked && blobUrl) ? (
                 <iframe

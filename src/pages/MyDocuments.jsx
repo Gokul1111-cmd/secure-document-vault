@@ -157,6 +157,10 @@ function MyDocuments() {
     };
 
     const handleView = (document) => {
+        if (document.fileName.toLowerCase().match(/\.(doc|docx|xls|xlsx|ppt|pptx)$/)) {
+            showToast('Office documents cannot be previewed natively in the browser securely. Please download them instead.', 'warning');
+            return;
+        }
         setSelectedDocument(document);
         setSelectedAction('view');
         setPin('');
