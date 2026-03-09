@@ -239,14 +239,14 @@ function ShareActivity() {
                                                         <div className="flex-1 min-w-0">
                                                             <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1">Secure Access Link</p>
                                                             <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
-                                                                {window.location.origin}/shared/{share.token}
+                                                                {window.location.origin}/share/{share.token}
                                                             </p>
                                                         </div>
                                                         <Button
                                                             size="sm"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                navigator.clipboard.writeText(`${window.location.origin}/shared/${share.token}`);
+                                                                navigator.clipboard.writeText(`${window.location.origin}/share/${share.token}`);
                                                                 showToast('Link copied to clipboard', 'success');
                                                             }}
                                                             className="flex-shrink-0"

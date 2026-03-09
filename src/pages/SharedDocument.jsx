@@ -162,6 +162,7 @@ function SharedDocument() {
       const blob = response.data;
       const url = window.URL.createObjectURL(blob);
       setBlobUrl(url);
+      setBlobRevoked(false); // Reset so the viewer renders correctly on re-open
 
       // Extract filename
       const contentDisposition = response.headers['content-disposition'];

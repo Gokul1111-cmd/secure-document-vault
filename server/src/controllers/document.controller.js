@@ -333,12 +333,15 @@ const deleteDocument = async (req, res, next) => {
     }
 
     await deleteFile(document.storagePath);
-    await prisma.document.delete({ where: { id } });
 
+    // Audit BEFORE delete — after deletion the docId FK reference no longer exists
     await createAuditLog({
-      userId, action: 'DELETE', docId: id, status: 'SUCCESS',
+      userId, action: 'DELETE', docId: null, status: 'SUCCESS',
+      message: `Deleted document: ${document.fileName}`,
       ipAddr: req.ip, userAgent: req.get('user-agent'),
     });
+
+    await prisma.document.delete({ where: { id } });
 
     res.json({ status: 'success', message: 'Document deleted successfully' });
   } catch (error) {

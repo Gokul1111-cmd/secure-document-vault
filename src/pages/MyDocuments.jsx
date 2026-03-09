@@ -258,8 +258,8 @@ function MyDocuments() {
 
     const handleMoveClick = async (item, type) => {
         setItemsToMove({
-            documents: type === 'file' ? [item.id] : [],
-            folders: type === 'folder' ? [item.id] : []
+            documentIds: type === 'file' ? [item.id] : [],
+            folderIds: type === 'folder' ? [item.id] : []
         });
         try {
             const res = await folderAPI.getContents(null);
