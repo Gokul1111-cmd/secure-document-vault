@@ -10,6 +10,8 @@ import Input from '../components/ui/Input.jsx';
 import LoadingSpinner from '../components/ui/LoadingSpinner.jsx';
 import Button from '../components/ui/Button.jsx';
 import OfficeViewer from '../components/ui/OfficeViewer.jsx';
+import WebcamSecurity from '../components/ui/WebcamSecurity.jsx';
+import WatermarkOverlay from '../components/ui/WatermarkOverlay.jsx';
 
 function AllDocuments() {
   const { user } = useAuth();
@@ -386,15 +388,24 @@ function AllDocuments() {
               Close Viewer
             </Button>
           </div>
+
+          <WebcamSecurity />
+
           <div className="flex-1 bg-slate-800 relative w-full h-full overflow-hidden flex items-center justify-center p-2 sm:p-4">
             {viewerState.isOffice ? (
-              <OfficeViewer url={viewerState.url} fileName={viewerState.fileName} className="rounded" />
+              <div className="relative h-full w-full overflow-hidden">
+                <OfficeViewer url={viewerState.url} fileName={viewerState.fileName} className="rounded" />
+                <WatermarkOverlay currentUser={user} />
+              </div>
             ) : (
-              <iframe
-                src={viewerState.url}
-                className="w-full h-full border-none bg-white rounded"
-                title={viewerState.fileName}
-              />
+              <div className="relative w-full h-full overflow-hidden">
+                <iframe
+                  src={viewerState.url}
+                  className="w-full h-full border-none bg-white rounded"
+                  title={viewerState.fileName}
+                />
+                <WatermarkOverlay currentUser={user} />
+              </div>
             )}
           </div>
         </div>

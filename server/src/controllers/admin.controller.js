@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const { getPrismaClient } = require('../config/prisma');
 const { createAuditLog } = require('../services/auditLog.service');
 const { deleteFile, getDownloadStream } = require('../services/storage.service');
-const { unwrapAESKey, createDecryptStream } = require('../services/crypto.service');
+const { unwrapAESKey, createDecryptStream } = require('../services/encryption.service');
 const env = require('../config/env');
 
 const getUsers = async (req, res, next) => {

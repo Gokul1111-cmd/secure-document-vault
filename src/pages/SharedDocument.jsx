@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { documentAPI } from '../services/api.js';
 import { useToast } from '../components/ui/ToastContainer.jsx';
@@ -11,6 +11,8 @@ import { Document as PdfDocument, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import OfficeViewer from '../components/ui/OfficeViewer.jsx';
+import WebcamSecurity from '../components/ui/WebcamSecurity.jsx';
+import WatermarkOverlay from '../components/ui/WatermarkOverlay.jsx';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -37,9 +39,26 @@ function SharedDocument() {
   const [numPages, setNumPages] = useState(null);
   const [expiresAt, setExpiresAt] = useState(null);
 
+  // Viewer Identity (for watermark — captured before document is opened)
+  const [viewerName, setViewerName] = useState('');
+  const [viewerEmail, setViewerEmail] = useState('');
+  const [identityConfirmed, setIdentityConfirmed] = useState(false);
+  const [viewerNameInput, setViewerNameInput] = useState('');
+  const [viewerEmailInput, setViewerEmailInput] = useState('');
+  const [identityError, setIdentityError] = useState('');
+
+  // OTP Verification State
+  const [requiresVerification, setRequiresVerification] = useState(false);
+  const [emailToken, setEmailToken] = useState(null);
+  const [otpStep, setOtpStep] = useState('email'); // 'email' or 'otp'
+  const [otpCode, setOtpCode] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+
   function onDocumentLoadSuccess({ numPages }) {
     setNumPages(numPages);
   }
+  const handleThreatDetected = useCallback((type) => console.warn("Physical threat detected:", type), []);
+  const handleThreatCleared = useCallback(() => console.log("Physical threat cleared"), []);
 
   useEffect(() => {
     // Use an 'ignored' flag to prevent React StrictMode's double invocation
@@ -172,12 +191,12 @@ function SharedDocument() {
     return () => clearInterval(interval);
   }, [expiresAt, fileReady]);
 
-  const handleAccess = async (pwd = '', isIgnored = () => false) => {
+  const handleAccess = async (pwd = '', isIgnored = () => false, currentEmailToken = null) => {
     setLoading(true);
     setError('');
 
     try {
-      const response = await documentAPI.accessShared(token, pwd || null, 'download');
+      const response = await documentAPI.accessShared(token, pwd || null, 'download', currentEmailToken || emailToken);
       if (isIgnored()) return; // StrictMode cleanup: discard the first cancelled mount
 
       // File access successful
@@ -223,12 +242,13 @@ function SharedDocument() {
         try {
           const errorData = JSON.parse(text);
 
-          if (err.response?.status === 401 && errorData.requiresPassword) {
-            setRequiresPassword(true);
+          if (err.response?.status === 401 && errorData.requiresVerification) {
+            setRequiresVerification(true);
             setError('');
             return;
-          } else if (err.response?.status === 401) {
-            setError('Invalid password. Please try again.');
+          } else if (err.response?.status === 401 && errorData.requiresPassword) {
+            setRequiresPassword(true);
+            setError('');
             return;
           } else if (err.response?.status === 410) {
             setExpired(true);
@@ -244,7 +264,11 @@ function SharedDocument() {
           setError('Failed to access shared document');
         }
       } else if (err.response?.status === 401) {
-        setRequiresPassword(true);
+        if (err.response.data?.requiresVerification) {
+          setRequiresVerification(true);
+        } else {
+          setRequiresPassword(true);
+        }
         setError('');
       } else if (err.response?.status === 410) {
         setExpired(true);
@@ -257,13 +281,59 @@ function SharedDocument() {
     }
   };
 
+  const handleRequestOTP = async (e) => {
+    e?.preventDefault();
+    if (!viewerEmailInput.trim()) {
+      setIdentityError('Please enter your email address.');
+      return;
+    }
+    setOtpLoading(true);
+    setIdentityError('');
+    try {
+      await documentAPI.requestShareOTP(token, viewerEmailInput.trim());
+      showToast('Verification code sent!', 'success');
+      setOtpStep('otp');
+    } catch (err) {
+      setIdentityError(err.response?.data?.message || 'Failed to send verification code.');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e) => {
+    e?.preventDefault();
+    if (otpCode.length !== 6) {
+      setIdentityError('Please enter the 6-digit code.');
+      return;
+    }
+    setOtpLoading(true);
+    setIdentityError('');
+    try {
+      const response = await documentAPI.verifyShareOTP(token, viewerEmailInput.trim(), otpCode);
+      const { emailToken: newToken, email: verifiedEmail } = response.data.data;
+      setEmailToken(newToken);
+      setViewerEmail(verifiedEmail);
+      setViewerName(verifiedEmail.split('@')[0]);
+      setIdentityConfirmed(true);
+      setRequiresVerification(false);
+      showToast('Email verified!', 'success');
+
+      // Auto-trigger access with the new token
+      handleAccess(password, () => false, newToken);
+    } catch (err) {
+      setIdentityError(err.response?.data?.message || 'Invalid or expired code.');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
   const handlePasswordSubmit = (e) => {
     e.preventDefault();
     if (!password) {
       setError('Please enter the password');
       return;
     }
-    handleAccess(password);
+    handleAccess(password, () => false, emailToken);
   };
 
   if (expired) {
@@ -285,6 +355,92 @@ function SharedDocument() {
             </Button>
           </Card.Content>
         </Card>
+      </div>
+    );
+  }
+
+  if (requiresVerification) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950">
+        <div className="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-md shadow-2xl flex flex-col gap-4">
+          <div className="flex items-center gap-3 mb-2">
+            <Shield className="h-8 w-8 text-amber-400" />
+            <div>
+              <h3 className="text-white font-bold text-lg">Verify Your Email</h3>
+              <p className="text-slate-400 text-sm">This document requires verified access.</p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {otpStep === 'email' ? (
+              <div>
+                <label className="text-slate-300 text-sm font-medium block mb-1">Email Address</label>
+                <Input
+                  type="email"
+                  placeholder="Enter your email to receive a code"
+                  value={viewerEmailInput}
+                  onChange={e => setViewerEmailInput(e.target.value)}
+                  className="w-full"
+                  autoFocus
+                />
+              </div>
+            ) : (
+              <div>
+                <label className="text-slate-300 text-sm font-medium block mb-1">Verification Code</label>
+                <Input
+                  type="text"
+                  placeholder="6-digit code"
+                  value={otpCode}
+                  onChange={e => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  className="w-full text-center text-2xl tracking-[0.5em] font-mono"
+                  autoFocus
+                />
+                <button
+                  onClick={handleRequestOTP}
+                  className="text-blue-400 text-xs mt-2 hover:underline inline-block"
+                >
+                  Resend Code
+                </button>
+              </div>
+            )}
+
+            {identityError && (
+              <p className="text-red-400 text-sm flex items-center gap-1">
+                <AlertCircle size={14} /> {identityError}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2 mt-2">
+            {otpStep === 'email' ? (
+              <Button
+                className="w-full bg-amber-600 hover:bg-amber-700"
+                onClick={handleRequestOTP}
+                loading={otpLoading}
+              >
+                Send Verification Code
+              </Button>
+            ) : (
+              <Button
+                className="w-full bg-amber-600 hover:bg-amber-700"
+                onClick={handleVerifyOTP}
+                loading={otpLoading}
+              >
+                Confirm Code & View
+              </Button>
+            )}
+
+            {otpStep === 'otp' && (
+              <Button
+                variant="ghost"
+                className="w-full text-slate-400 hover:text-white"
+                onClick={() => setOtpStep('email')}
+              >
+                Use Different Email
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
     );
   }
@@ -406,8 +562,81 @@ function SharedDocument() {
           </Card.Content>
         </Card>
 
+        {/* Secure Access Gate (Identity / Verification) */}
+        {showViewer && !identityConfirmed && !isAttachment && (
+          <div className="fixed inset-0 z-[200] bg-slate-900/90 flex items-center justify-center backdrop-blur-sm">
+            <div className="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-md shadow-2xl flex flex-col gap-4">
+              <div className="flex items-center gap-3 mb-2">
+                <Shield className="h-8 w-8 text-blue-400" />
+                <div>
+                  <h3 className="text-white font-bold text-lg">Secure Document Access</h3>
+                  <p className="text-slate-400 text-sm">Your identity is required before viewing this document.</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-slate-300 text-sm font-medium block mb-1">Full Name</label>
+                  <Input
+                    type="text"
+                    placeholder="Enter your full name"
+                    value={viewerNameInput}
+                    onChange={e => setViewerNameInput(e.target.value)}
+                    className="w-full"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="text-slate-300 text-sm font-medium block mb-1">Email Address</label>
+                  <Input
+                    type="email"
+                    placeholder="Enter your email address"
+                    value={viewerEmailInput}
+                    onChange={e => setViewerEmailInput(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+
+                {identityError && (
+                  <p className="text-red-400 text-sm flex items-center gap-1">
+                    <AlertCircle size={14} /> {identityError}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2 mt-2">
+                <Button
+                  className="w-full"
+                  onClick={() => {
+                    if (!viewerNameInput.trim() || !viewerEmailInput.trim()) {
+                      setIdentityError('Please enter both your name and email.');
+                      return;
+                    }
+                    setViewerName(viewerNameInput.trim());
+                    setViewerEmail(viewerEmailInput.trim());
+                    setIdentityConfirmed(true);
+                    handleAccess(password); // Final check to see if verified identity is accepted
+                  }}
+                  loading={loading}
+                >
+                  <Eye size={16} className="mr-2" />
+                  Confirm & View Document
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full text-slate-400 hover:text-white border-slate-700 hover:bg-slate-700"
+                  onClick={() => setShowViewer(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Fullscreen Inline Viewer Modal */}
-        {showViewer && !isAttachment && (
+        {showViewer && (identityConfirmed || emailToken) && !isAttachment && (
           <div className="fixed inset-0 z-50 bg-slate-900/95 flex flex-col">
             <div className="flex justify-between items-center p-4 border-b border-slate-700 bg-slate-900">
               <h3 className="text-white font-medium flex items-center gap-2 truncate">
@@ -453,6 +682,12 @@ function SharedDocument() {
               </div>
             </div>
 
+            {/* Webcam ML Security Layer (Only runs when viewer is open) */}
+            <WebcamSecurity
+              onThreatDetected={handleThreatDetected}
+              onThreatCleared={handleThreatCleared}
+            />
+
             <div
               className={`flex-1 bg-slate-800 relative w-full h-full overflow-hidden flex items-center justify-center select-none transition-all duration-75 ${(isScreenshotting || isDevToolsOpen) ? 'blur-xl' : ''}`}
               style={(isScreenshotting || isDevToolsOpen) ? { filter: 'blur(24px) brightness(0.1) saturate(0)', pointerEvents: 'none' } : {}}
@@ -467,31 +702,7 @@ function SharedDocument() {
               }}
               onDragStart={(e) => e.preventDefault()}
             >
-              {/* Security watermark - near-invisible normally, appears in screenshots */}
-              {!isScreenshotting && !isDevToolsOpen && (
-                <div
-                  className="absolute inset-0 z-20 pointer-events-none select-none overflow-hidden"
-                  style={{ opacity: 0.04 }}
-                  aria-hidden="true"
-                >
-                  {Array.from({ length: 8 }, (_, row) =>
-                    Array.from({ length: 6 }, (_, col) => (
-                      <span
-                        key={`${row}-${col}`}
-                        className="absolute text-white font-bold text-xs uppercase tracking-widest"
-                        style={{
-                          transform: 'rotate(-35deg)',
-                          top: `${row * 130 - 30}px`,
-                          left: `${col * 200 - 50}px`,
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        ⚿ SECURE DOCUMENT
-                      </span>
-                    ))
-                  )}
-                </div>
-              )}
+
               {(isScreenshotting || isDevToolsOpen) && (
                 <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/80">
                   <div className="bg-slate-800 p-6 rounded-xl border border-red-900/50 flex flex-col items-center shadow-2xl">
@@ -525,20 +736,34 @@ function SharedDocument() {
                           renderAnnotationLayer={false}
                           loading={<div className="bg-slate-700 animate-pulse w-[600px] h-[800px]"></div>}
                         />
-                        {/* Security Layer that catches any direct DOM events escaping the page content */}
+                        {/* Watermark clipped exactly to this page */}
+                        {!isScreenshotting && !isDevToolsOpen && (
+                          <WatermarkOverlay currentUser={{ name: viewerName, email: viewerEmail }} />
+                        )}
+                        {/* Transparent security intercept layer */}
                         <div className="absolute inset-0 z-10 w-full h-full opacity-0" onContextMenu={(e) => e.preventDefault()}></div>
                       </div>
                     ))}
                   </PdfDocument>
                 </div>
               ) : (blobUrl && fileName.toLowerCase().match(/\.(docx|xlsx|csv)$/)) ? (
-                <OfficeViewer url={blobUrl} fileName={fileName} className="h-full w-full" />
+                <div className="relative h-full w-full overflow-hidden">
+                  <OfficeViewer url={blobUrl} fileName={fileName} className="h-full w-full" />
+                  {!isScreenshotting && !isDevToolsOpen && (
+                    <WatermarkOverlay currentUser={{ name: viewerName, email: viewerEmail }} />
+                  )}
+                </div>
               ) : (blobUrl) ? (
-                <iframe
-                  src={blobUrl}
-                  className="w-full h-full border-none bg-white"
-                  title={fileName}
-                />
+                <div className="relative w-full h-full overflow-hidden">
+                  <iframe
+                    src={blobUrl}
+                    className="w-full h-full border-none bg-white"
+                    title={fileName}
+                  />
+                  {!isScreenshotting && !isDevToolsOpen && (
+                    <WatermarkOverlay currentUser={{ name: viewerName, email: viewerEmail }} />
+                  )}
+                </div>
               ) : null}
             </div>
           </div>

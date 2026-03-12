@@ -6,6 +6,8 @@ const router = Router();
 
 // Public route for accessing shared documents (no auth required)
 router.post('/shared/:token', documentController.accessSharedDocument);
+router.post('/shared/:token/request-otp', documentController.requestShareOTP);
+router.post('/shared/:token/verify-otp', documentController.verifyShareOTP);
 
 // Protected routes (require authentication)
 router.use(authMiddleware);

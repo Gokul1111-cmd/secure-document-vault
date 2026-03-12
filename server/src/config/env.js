@@ -49,4 +49,5 @@ module.exports = {
   jwtAccessExpiresIn: getEnv('JWT_ACCESS_EXPIRES_IN', '15m'),
   jwtRefreshExpiresIn: getEnv('JWT_REFRESH_EXPIRES_IN', '7d'),
   passwordSaltRounds: toNumber(getEnv('PASSWORD_SALT_ROUNDS', '12'), 12),
+  resendApiKey: getEnv('RESEND_API_KEY', ''),
 };

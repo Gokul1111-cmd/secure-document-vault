@@ -13,6 +13,8 @@ import Input from '../components/ui/Input.jsx';
 import LoadingSpinner from '../components/ui/LoadingSpinner.jsx';
 import ConfirmDialog from '../components/ui/ConfirmDialog.jsx';
 import OfficeViewer from '../components/ui/OfficeViewer.jsx';
+import WebcamSecurity from '../components/ui/WebcamSecurity.jsx';
+import WatermarkOverlay from '../components/ui/WatermarkOverlay.jsx';
 
 function MyDocuments() {
     const { user } = useAuth();
@@ -42,6 +44,7 @@ function MyDocuments() {
     const [allowDownload, setAllowDownload] = useState(false);
     const [burnAfterRead, setBurnAfterRead] = useState(false);
     const [maxAccess, setMaxAccess] = useState('');
+    const [requireEmailVerification, setRequireEmailVerification] = useState(false);
     const [sharingLoading, setSharingLoading] = useState(false);
 
     // Pagination State
@@ -239,6 +242,7 @@ function MyDocuments() {
         setSharePassword('');
         setAllowDownload(false);
         setBurnAfterRead(false);
+        setRequireEmailVerification(false);
         setMaxAccess('');
         setShowShareModal(true);
     };
@@ -250,6 +254,7 @@ function MyDocuments() {
                 password: sharePassword || undefined,
                 allowDownload,
                 burnAfterRead,
+                requireEmailVerification,
                 expiresIn: shareExpiryMode === 'preset' ? shareExpiry : undefined,
                 expiresAt: shareExpiryMode === 'custom' ? new Date(shareCustomDate).toISOString() : undefined,
                 maxAccess: maxAccess ? parseInt(maxAccess) : undefined
@@ -545,6 +550,13 @@ function MyDocuments() {
                                         />
                                     </div>
                                 )}
+                                <div className="flex items-center justify-between border-t dark:border-slate-700 pt-3">
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Email Verification</span>
+                                        <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider">High Security</span>
+                                    </div>
+                                    <input type="checkbox" checked={requireEmailVerification} onChange={() => setRequireEmailVerification(!requireEmailVerification)} className="w-4 h-4 accent-blue-600 cursor-pointer" />
+                                </div>
                             </div>
 
                             {/* Password */}
@@ -615,15 +627,25 @@ function MyDocuments() {
                             Close Viewer
                         </Button>
                     </div>
+
+                    {/* Webcam ML Security Layer */}
+                    <WebcamSecurity />
+
                     <div className="flex-1 bg-slate-800 relative w-full h-full overflow-hidden flex items-center justify-center p-2 sm:p-4">
                         {viewerState.isOffice ? (
-                            <OfficeViewer url={viewerState.url} fileName={viewerState.fileName} className="rounded" />
+                            <div className="relative h-full w-full overflow-hidden">
+                                <OfficeViewer url={viewerState.url} fileName={viewerState.fileName} className="rounded" />
+                                <WatermarkOverlay currentUser={user} />
+                            </div>
                         ) : (
-                            <iframe
-                                src={viewerState.url}
-                                className="w-full h-full border-none bg-white rounded"
-                                title={viewerState.fileName}
-                            />
+                            <div className="relative w-full h-full overflow-hidden">
+                                <iframe
+                                    src={viewerState.url}
+                                    className="w-full h-full border-none bg-white rounded"
+                                    title={viewerState.fileName}
+                                />
+                                <WatermarkOverlay currentUser={user} />
+                            </div>
                         )}
                     </div>
                 </div>

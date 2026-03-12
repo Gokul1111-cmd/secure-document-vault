@@ -291,7 +291,7 @@ const streamDocument = async (req, res, disposition, next) => {
 
     downloadStream.on('error', (err) => {
       console.error('Stream error:', err);
-      if (!res.headersSent) res.status(500).json({ status: 'error', message: 'Stream error' });
+      if (!res.headersSent) res.status(500).json({ status: 'error', message: err.message || 'Stream error' });
     });
 
     decryptTransform.on('error', (err) => {
@@ -359,6 +359,7 @@ const createShareLink = async (req, res, next) => {
       password,
       allowDownload = false,
       burnAfterRead = false,
+      requireEmailVerification = false,
       maxAccess = null
     } = req.body;
     const userId = req.user.userId;
@@ -412,6 +413,7 @@ const createShareLink = async (req, res, next) => {
         expiresAt,
         allowDownload,
         burnAfterRead,
+        requireEmailVerification,
         maxAccess: actualMaxAccess,
       },
     });
@@ -427,7 +429,7 @@ const createShareLink = async (req, res, next) => {
       action: 'SHARE_CREATED',
       docId: id,
       status: 'SUCCESS',
-      message: `Share link created, expires at ${expiresAt.toISOString()}`,
+      message: `Share link created, requires email: ${requireEmailVerification}, expires at ${expiresAt.toISOString()}`,
       ipAddr: req.ip,
       userAgent: req.get('user-agent'),
     });
@@ -449,7 +451,7 @@ const createShareLink = async (req, res, next) => {
 const accessSharedDocument = async (req, res, next) => {
   try {
     const { token } = req.params;
-    const { password } = req.body;
+    const { password, emailToken } = req.body; // emailToken is the verified OTP session
 
     const prisma = getPrismaClient();
 
@@ -493,6 +495,38 @@ const accessSharedDocument = async (req, res, next) => {
       return res.status(403).json({ status: 'error', message: 'Maximum access count reached for this link' });
     }
 
+    // CHECK FOR EMAIL VERIFICATION FIRST
+    if (share.requireEmailVerification) {
+      if (!emailToken) {
+        return res.status(401).json({
+          status: 'error',
+          message: 'Email verification required',
+          requiresVerification: true
+        });
+      }
+
+      // Verify the email session token (we use the OTP record ID as a simple token)
+      const otpSession = await prisma.shareOTP.findFirst({
+        where: {
+          id: emailToken,
+          shareId: share.id,
+          verifiedAt: { not: null },
+          expiresAt: { gte: new Date() }
+        }
+      });
+
+      if (!otpSession) {
+        return res.status(401).json({
+          status: 'error',
+          message: 'Email verification session expired or invalid',
+          requiresVerification: true
+        });
+      }
+
+      // Attach verified email to req for audit/watermark tracing if needed
+      req.verifiedEmail = otpSession.email;
+    }
+
     // Verify password if required
     if (share.sharePassword) {
       if (!password || password.trim() === '') {
@@ -512,8 +546,6 @@ const accessSharedDocument = async (req, res, next) => {
     const isDownload = req.query.action === 'download' && share.allowDownload;
     const eventType = isDownload ? 'DOWNLOADED' : 'VIEWED';
 
-    // Auto-revoke only AFTER the last valid access is consumed (newAccessCount > maxAccess)
-    // Using >= here was the off-by-one bug: it deactivated the link during the last valid access.
     const newAccessCount = share.accessCount + 1;
     let isActive = share.isActive;
     if (share.maxAccess !== null && newAccessCount >= share.maxAccess) {
@@ -534,7 +566,7 @@ const accessSharedDocument = async (req, res, next) => {
           action: 'SHARE_ACCESSED',
           docId: share.document.id,
           status: 'SUCCESS',
-          message: `Shared document accessed via token (${eventType})`,
+          message: `Shared document accessed via token (${eventType})${req.verifiedEmail ? ` by ${req.verifiedEmail}` : ''}`,
           ipAddr: ipAddress,
           userAgent: userAgent,
         }
@@ -549,6 +581,7 @@ const accessSharedDocument = async (req, res, next) => {
     res.setHeader('Content-Type', document.mimeType);
     res.setHeader('X-Burn-After-Read', share.burnAfterRead ? 'true' : 'false');
     res.setHeader('X-Expires-At', share.expiresAt.toISOString());
+    if (req.verifiedEmail) res.setHeader('X-Viewer-Email', req.verifiedEmail);
 
     if (isDownload) {
       res.setHeader('Content-Disposition', `attachment; filename="${document.fileName}"`);
@@ -568,6 +601,104 @@ const accessSharedDocument = async (req, res, next) => {
     });
   } catch (error) {
     console.error('[accessSharedDocument Error]:', error);
+    next(error);
+  }
+};
+
+const { sendOTPEmail } = require('../services/email.service');
+
+// REQUEST OTP FOR SHARED DOCUMENT
+const requestShareOTP = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+    const { email } = req.body;
+
+    if (!email) return res.status(400).json({ status: 'error', message: 'Email is required' });
+
+    const prisma = getPrismaClient();
+    const share = await prisma.documentShare.findUnique({
+      where: { shareToken: token }
+    });
+
+    if (!share || !share.isActive || new Date() > share.expiresAt) {
+      return res.status(404).json({ status: 'error', message: 'Link invalid or expired' });
+    }
+
+    // Generate 6-digit OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    await prisma.shareOTP.create({
+      data: {
+        shareId: share.id,
+        email,
+        otpCode,
+        expiresAt
+      }
+    });
+
+    // Send real email via Resend
+    await sendOTPEmail(email, otpCode);
+
+    res.json({
+      status: 'success',
+      message: 'OTP sent successfully. Please check your inbox.'
+    });
+
+  } catch (error) {
+    console.error('[requestShareOTP Error]:', error);
+    res.status(500).json({ status: 'error', message: error.message || 'Failed to send verification code' });
+  }
+};
+
+// VERIFY OTP FOR SHARED DOCUMENT
+const verifyShareOTP = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+    const { email, otpCode } = req.body;
+
+    if (!email || !otpCode) {
+      return res.status(400).json({ status: 'error', message: 'Email and code are required' });
+    }
+
+    const prisma = getPrismaClient();
+    const share = await prisma.documentShare.findUnique({
+      where: { shareToken: token }
+    });
+
+    if (!share) return res.status(404).json({ status: 'error', message: 'Link not found' });
+
+    const otpRecord = await prisma.shareOTP.findFirst({
+      where: {
+        shareId: share.id,
+        email,
+        otpCode,
+        expiresAt: { gte: new Date() },
+        verifiedAt: null
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    if (!otpRecord) {
+      return res.status(401).json({ status: 'error', message: 'Invalid or expired OTP code' });
+    }
+
+    // Mark as verified
+    await prisma.shareOTP.update({
+      where: { id: otpRecord.id },
+      data: { verifiedAt: new Date() }
+    });
+
+    res.json({
+      status: 'success',
+      message: 'Email verified successfully',
+      data: {
+        emailToken: otpRecord.id, // Return this to the client as the "session"
+        email: email
+      }
+    });
+
+  } catch (error) {
     next(error);
   }
 };
@@ -731,6 +862,8 @@ module.exports = {
   deleteDocument,
   createShareLink,
   accessSharedDocument,
+  requestShareOTP,
+  verifyShareOTP,
   getShareLogs,
   revokeShare,
   extendShare,

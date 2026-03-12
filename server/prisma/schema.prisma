@@ -74,18 +74,19 @@ model Folder {
 }
 
 model DocumentShare {
-  id            String   @id @default(uuid())
-  documentId    String   @map("document_id")
-  ownerUserId   String   @map("owner_user_id")
-  shareToken    String   @unique @map("share_token")
-  sharePassword String?  @map("share_password")
-  expiresAt     DateTime @map("expires_at")
-  accessCount   Int      @default(0) @map("access_count")
-  maxAccess     Int?     @map("max_access")
-  isActive      Boolean  @default(true) @map("is_active")
-  allowDownload Boolean  @default(false) @map("allow_download")
-  burnAfterRead Boolean  @default(false) @map("burn_after_read")
-  createdAt     DateTime @default(now()) @map("created_at")
+  id                       String   @id @default(uuid())
+  documentId               String   @map("document_id")
+  ownerUserId              String   @map("owner_user_id")
+  shareToken               String   @unique @map("share_token")
+  sharePassword            String?  @map("share_password")
+  expiresAt                DateTime @map("expires_at")
+  accessCount              Int      @default(0) @map("access_count")
+  maxAccess                Int?     @map("max_access")
+  isActive                 Boolean  @default(true) @map("is_active")
+  allowDownload            Boolean  @default(false) @map("allow_download")
+  burnAfterRead            Boolean  @default(false) @map("burn_after_read")
+  requireEmailVerification Boolean  @default(false) @map("require_email_verification")
+  createdAt                DateTime @default(now()) @map("created_at")
 
   document Document             @relation(fields: [documentId], references: [id], onDelete: Cascade)
   events   DocumentShareEvent[]
@@ -94,6 +95,19 @@ model DocumentShare {
   @@index([shareToken])
   @@index([expiresAt])
   @@map("document_shares")
+}
+
+model ShareOTP {
+  id         String   @id @default(uuid())
+  shareId    String   @map("share_id")
+  email      String
+  otpCode    String   @map("otp_code")
+  expiresAt  DateTime @map("expires_at")
+  verifiedAt DateTime? @map("verified_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([shareId, email])
+  @@map("share_otps")
 }
 
 model AuditLog {

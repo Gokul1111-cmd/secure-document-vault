@@ -81,7 +81,10 @@ export const documentAPI = {
   download: (id, pin) => apiClient.post(`/docs/${id}/download`, { pin }, { responseType: 'blob' }),
   delete: (id) => apiClient.delete(`/docs/${id}`),
   createShare: (id, options) => apiClient.post(`/docs/${id}/share`, options),
-  accessShared: (token, password, action = 'download') => publicClient.post(`/docs/shared/${token}?action=${action}`, { password }, { responseType: 'blob' }),
+  accessShared: (token, password, action = 'download', emailToken = null) =>
+    publicClient.post(`/docs/shared/${token}?action=${action}`, { password, emailToken }, { responseType: 'blob' }),
+  requestShareOTP: (token, email) => publicClient.post(`/docs/shared/${token}/request-otp`, { email }),
+  verifyShareOTP: (token, email, otpCode) => publicClient.post(`/docs/shared/${token}/verify-otp`, { email, otpCode }),
   getShareLogs: (params) => apiClient.get('/docs/shares/logs', { params }),
   bulkDeleteShares: (ids) => apiClient.delete('/docs/shares/bulk', { data: { ids } }),
   revokeShare: (id) => apiClient.post(`/docs/shares/${id}/revoke`),
