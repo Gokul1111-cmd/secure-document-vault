@@ -253,7 +253,6 @@ function DashboardAdmin() {
 
   const handleViewLogs = () => navigate('/audit-logs');
   const handleManageUsers = () => navigate('/users');
-  const handleViewDocuments = () => navigate('/documents');
 
   return (
     <div className="space-y-6 lg:space-y-8">
@@ -653,9 +652,6 @@ function DashboardAdmin() {
                 <Card.Content className="space-y-2">
                   <Button variant="outline" size="sm" className="w-full justify-start gap-2" onClick={handleManageUsers}>
                     <Users className="h-4 w-4" /> <span>Manage Users</span>
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start gap-2" onClick={handleViewDocuments}>
-                    <FileText className="h-4 w-4" /> <span>All Documents</span>
                   </Button>
                   <Button variant="outline" size="sm" className="w-full justify-start gap-2" onClick={handleViewLogs}>
                     <Activity className="h-4 w-4" /> <span>Audit Logs</span>

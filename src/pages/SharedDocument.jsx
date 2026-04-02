@@ -757,7 +757,7 @@ function SharedDocument() {
                 <div className="relative w-full h-full overflow-hidden">
                   <iframe
                     src={blobUrl}
-                    className="w-full h-full border-none bg-white"
+                    className="w-full h-full border-none bg-white block"
                     title={fileName}
                   />
                   {!isScreenshotting && !isDevToolsOpen && (

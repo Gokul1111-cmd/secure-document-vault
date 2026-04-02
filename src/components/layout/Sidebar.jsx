@@ -15,7 +15,6 @@ function Sidebar({ isMobileOpen = false, onClose = () => { } }) {
   const adminNavItems = [
     { to: '/admin', icon: Settings, label: 'Admin Panel' },
     { to: '/users', icon: Users, label: 'User Management' },
-    { to: '/documents', icon: FileText, label: 'All Documents' },
     { to: '/audit-logs', icon: Activity, label: 'Audit Logs' }
   ];
 

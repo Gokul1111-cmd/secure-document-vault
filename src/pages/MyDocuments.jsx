@@ -13,7 +13,6 @@ import Input from '../components/ui/Input.jsx';
 import LoadingSpinner from '../components/ui/LoadingSpinner.jsx';
 import ConfirmDialog from '../components/ui/ConfirmDialog.jsx';
 import OfficeViewer from '../components/ui/OfficeViewer.jsx';
-import WebcamSecurity from '../components/ui/WebcamSecurity.jsx';
 import WatermarkOverlay from '../components/ui/WatermarkOverlay.jsx';
 
 function MyDocuments() {
@@ -628,20 +627,18 @@ function MyDocuments() {
                         </Button>
                     </div>
 
-                    {/* Webcam ML Security Layer */}
-                    <WebcamSecurity />
 
-                    <div className="flex-1 bg-slate-800 relative w-full h-full overflow-hidden flex items-center justify-center p-2 sm:p-4">
+                    <div className="flex-1 bg-slate-800 relative w-full h-full overflow-hidden">
                         {viewerState.isOffice ? (
                             <div className="relative h-full w-full overflow-hidden">
-                                <OfficeViewer url={viewerState.url} fileName={viewerState.fileName} className="rounded" />
+                                <OfficeViewer url={viewerState.url} fileName={viewerState.fileName} className="h-full w-full" />
                                 <WatermarkOverlay currentUser={user} />
                             </div>
                         ) : (
                             <div className="relative w-full h-full overflow-hidden">
                                 <iframe
                                     src={viewerState.url}
-                                    className="w-full h-full border-none bg-white rounded"
+                                    className="w-full h-full border-none bg-white block"
                                     title={viewerState.fileName}
                                 />
                                 <WatermarkOverlay currentUser={user} />
